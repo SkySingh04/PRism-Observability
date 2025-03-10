@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/go-github/v53/github"
@@ -126,11 +127,17 @@ func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]
 	for _, suggestion := range suggestions {
 		commentBody := fmt.Sprintf("```suggestion\n%s\n```", suggestion.Content)
 
-		// Create request payload
+		// Convert LineNum string to integer
+		lineNum, err := strconv.Atoi(suggestion.LineNum)
+		if err != nil {
+			return fmt.Errorf("invalid line number: %v", err)
+		}
+
+		// Create request payload with correct parameters
 		payload := map[string]interface{}{
 			"commit_id": headSHA,
 			"path":      suggestion.FileName,
-			"line":      suggestion.LineNum,
+			"line":      lineNum, // This should be an integer
 			"body":      commentBody,
 		}
 
@@ -149,6 +156,8 @@ func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]
 			return fmt.Errorf("error creating HTTP request: %v", err)
 		}
 
+		// Make sure to set the correct content-type and preview header
+		req.Header.Set("Accept", "application/vnd.github.comfort-fade-preview+json")
 		req.Header.Set("Authorization", fmt.Sprintf("token %s", configStruct.GithubToken))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "application/vnd.github.comfort-fade-preview+json")

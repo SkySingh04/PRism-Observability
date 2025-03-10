@@ -52,10 +52,13 @@ func main() {
 		log.Fatalf("Error calling Claude API: %v", err)
 	}
 	if suggestions == nil {
+		fmt.Println("No suggestions found")
+		fmt.Println("Response text:")
 		fmt.Println(responseText)
+	} else {
+		fmt.Println("Suggestions found")
+		fmt.Println(suggestions)
 	}
-	fmt.Println(responseText)
-	fmt.Println(suggestions)
 
 	if suggestions != nil {
 		err := github.CreatePRComments(*suggestions, prDetails, config)
