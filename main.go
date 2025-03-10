@@ -6,13 +6,11 @@ import (
 	"PRism/llm"
 	"PRism/utils"
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"strconv"
-	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -49,16 +47,24 @@ func main() {
 	prompt := llm.BuildObservabilityPrompt(prDetails, prdContent)
 
 	// Call Claude API
-	recommendations, err, responseText := llm.CallClaudeAPI(prompt, config)
+	suggestions, err, responseText := llm.CallClaudeAPI(prompt, config)
 	if err != nil {
 		log.Fatalf("Error calling Claude API: %v", err)
 	}
-	if recommendations == nil {
+	if suggestions == nil {
 		fmt.Println(responseText)
 	}
+	fmt.Println(responseText)
+	fmt.Println(suggestions)
 
-	// Output recommendations
-	outputRecommendations(recommendations, config)
+	if suggestions != nil {
+		err := github.CreatePRComments(*suggestions, prDetails, config)
+		if err != nil {
+			log.Fatalf("Error creating PR comments: %v", err)
+		}
+	}
+	// Output suggestions
+	// outputsSuggestions(suggestions, config)
 }
 
 func parseFlags() config.Config {
@@ -106,62 +112,62 @@ func parseFlags() config.Config {
 	return config
 }
 
-func outputRecommendations(recommendations *config.ObservabilityRecommendation, config config.Config) {
-	if config.OutputFormat == "json" {
-		output, err := json.MarshalIndent(recommendations, "", "  ")
-		if err != nil {
-			log.Fatalf("Error marshaling recommendations: %v", err)
-		}
-		fmt.Println(string(output))
-	} else if config.OutputFormat == "markdown" {
-		outputMarkdown(recommendations)
-	} else {
-		log.Fatalf("Unsupported output format: %s", config.OutputFormat)
-	}
-}
+// func outputsSuggestions(recommendations *[]config.FileSuggestion, config config.Config) {
+// 	if config.OutputFormat == "json" {
+// 		output, err := json.MarshalIndent(recommendations, "", "  ")
+// 		if err != nil {
+// 			log.Fatalf("Error marshaling recommendations: %v", err)
+// 		}
+// 		fmt.Println(string(output))
+// 	} else if config.OutputFormat == "markdown" {
+// 		outputMarkdown(recommendations)
+// 	} else {
+// 		log.Fatalf("Unsupported output format: %s", config.OutputFormat)
+// 	}
+// }
 
-func outputMarkdown(recommendations *config.ObservabilityRecommendation) {
-	fmt.Println("# Observability Recommendations\n")
+// func outputMarkdown(recommendations *config.ObservabilityRecommendation) {
+// 	fmt.Println("# Observability Recommendations\n")
 
-	// Event tracking
-	fmt.Println("## Event Tracking Recommendations\n")
-	for _, rec := range recommendations.EventTrackingRecommendations {
-		fmt.Printf("### %s\n\n", rec.EventName)
-		fmt.Printf("**Properties**: %s\n\n", strings.Join(rec.Properties, ", "))
-		fmt.Printf("**Implementation**:\n```go\n%s\n```\n\n", rec.Implementation)
-		fmt.Printf("**Context**: %s\n\n", rec.ContextualInfo)
-		fmt.Printf("**Location**: %s\n\n", rec.Location)
-		fmt.Println("---\n")
-	}
+// 	// Event tracking
+// 	fmt.Println("## Event Tracking Recommendations\n")
+// 	for _, rec := range recommendations.EventTrackingRecommendations {
+// 		fmt.Printf("### %s\n\n", rec.EventName)
+// 		fmt.Printf("**Properties**: %s\n\n", strings.Join(rec.Properties, ", "))
+// 		fmt.Printf("**Implementation**:\n```go\n%s\n```\n\n", rec.Implementation)
+// 		fmt.Printf("**Context**: %s\n\n", rec.ContextualInfo)
+// 		fmt.Printf("**Location**: %s\n\n", rec.Location)
+// 		fmt.Println("---\n")
+// 	}
 
-	// Alerting rules
-	fmt.Println("## Alerting Rules\n")
-	for _, rule := range recommendations.AlertingRules {
-		fmt.Printf("### %s\n\n", rule.Name)
-		fmt.Printf("**Description**: %s\n\n", rule.Description)
-		fmt.Printf("**Query**: `%s`\n\n", rule.Query)
-		fmt.Printf("**Threshold**: %s\n\n", rule.Threshold)
-		fmt.Printf("**Severity**: %s\n\n", rule.Severity)
-		fmt.Printf("**Implementation**:\n```\n%s\n```\n\n", rule.Implementation)
-		fmt.Println("---\n")
-	}
+// 	// Alerting rules
+// 	fmt.Println("## Alerting Rules\n")
+// 	for _, rule := range recommendations.AlertingRules {
+// 		fmt.Printf("### %s\n\n", rule.Name)
+// 		fmt.Printf("**Description**: %s\n\n", rule.Description)
+// 		fmt.Printf("**Query**: `%s`\n\n", rule.Query)
+// 		fmt.Printf("**Threshold**: %s\n\n", rule.Threshold)
+// 		fmt.Printf("**Severity**: %s\n\n", rule.Severity)
+// 		fmt.Printf("**Implementation**:\n```\n%s\n```\n\n", rule.Implementation)
+// 		fmt.Println("---\n")
+// 	}
 
-	// Dashboards
-	fmt.Println("## Dashboard Recommendations\n")
-	for _, dashboard := range recommendations.DashboardRecommendations {
-		fmt.Printf("### %s (%s)\n\n", dashboard.Name, dashboard.Platform)
-		fmt.Printf("**Description**: %s\n\n", dashboard.Description)
+// 	// Dashboards
+// 	fmt.Println("## Dashboard Recommendations\n")
+// 	for _, dashboard := range recommendations.DashboardRecommendations {
+// 		fmt.Printf("### %s (%s)\n\n", dashboard.Name, dashboard.Platform)
+// 		fmt.Printf("**Description**: %s\n\n", dashboard.Description)
 
-		fmt.Println("#### Charts\n")
-		for _, chart := range dashboard.Charts {
-			fmt.Printf("- **%s**: %s\n", chart.Title, chart.Description)
-			fmt.Printf("  - Query: `%s`\n", chart.Query)
-			fmt.Printf("  - Type: %s\n\n", chart.ChartType)
-		}
-		fmt.Println("---\n")
-	}
+// 		fmt.Println("#### Charts\n")
+// 		for _, chart := range dashboard.Charts {
+// 			fmt.Printf("- **%s**: %s\n", chart.Title, chart.Description)
+// 			fmt.Printf("  - Query: `%s`\n", chart.Query)
+// 			fmt.Printf("  - Type: %s\n\n", chart.ChartType)
+// 		}
+// 		fmt.Println("---\n")
+// 	}
 
-	// General advice
-	fmt.Println("## General Advice\n")
-	fmt.Println(recommendations.GeneralAdvice)
-}
+// 	// General advice
+// 	fmt.Println("## General Advice\n")
+// 	fmt.Println(recommendations.GeneralAdvice)
+// }

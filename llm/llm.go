@@ -92,7 +92,7 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 	return b.String()
 }
 
-func CallClaudeAPI(prompt string, configStruct config.Config) (*config.ObservabilityRecommendation, error, string) {
+func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSuggestion, error, string) {
 	// Prepare Claude request
 	claudeReq := config.ClaudeRequest{
 		Model:       configStruct.ClaudeModel,
@@ -166,25 +166,25 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*config.Observabi
 		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText
 	}
 
-	// Extract JSON from Claude's response for structured recommendations
-	jsonStr := utils.ExtractJSONFromText(responseText)
-	if jsonStr == "" {
-		// If no JSON found but we have suggestions, continue without structured recommendations
-		if len(suggestions) > 0 {
-			return &config.ObservabilityRecommendation{}, nil, responseText
-		}
-		return nil, fmt.Errorf("no JSON or suggestions found in Claude's response"), responseText
-	}
+	// // Extract JSON from Claude's response for structured recommendations
+	// jsonStr := utils.ExtractJSONFromText(responseText)
+	// if jsonStr == "" {
+	// 	// If no JSON found but we have suggestions, continue without structured recommendations
+	// 	if len(suggestions) > 0 {
+	// 		return &config.ObservabilityRecommendation{}, nil, responseText
+	// 	}
+	// 	return nil, fmt.Errorf("no JSON or suggestions found in Claude's response"), responseText
+	// }
 
-	// Parse the recommendations
-	var recommendations config.ObservabilityRecommendation
-	if err := json.Unmarshal([]byte(jsonStr), &recommendations); err != nil {
-		// If JSON parsing fails but we have suggestions, continue without structured recommendations
-		if len(suggestions) > 0 {
-			return &config.ObservabilityRecommendation{}, nil, responseText
-		}
-		return nil, fmt.Errorf("error parsing recommendations: %v", err), responseText
-	}
+	// // Parse the recommendations
+	// var recommendations config.ObservabilityRecommendation
+	// if err := json.Unmarshal([]byte(jsonStr), &recommendations); err != nil {
+	// 	// If JSON parsing fails but we have suggestions, continue without structured recommendations
+	// 	if len(suggestions) > 0 {
+	// 		return &config.ObservabilityRecommendation{}, nil, responseText
+	// 	}
+	// 	return nil, fmt.Errorf("error parsing recommendations: %v", err), responseText
+	// }
 
-	return &recommendations, nil, responseText
+	return &suggestions, nil, responseText
 }
