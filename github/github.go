@@ -94,13 +94,33 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	return result, nil
 }
 
-// CreatePRComments posts the suggestions as inline comments in the PR
 func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config) error {
 	// Get PR details
 	prNumber := configStruct.PRNumber
 	owner := configStruct.RepoOwner
 	repo := configStruct.RepoName
-	headSHA := prDetails["head_sha"].(string)
+
+	// Since head_sha isn't in prDetails, we need to fetch it
+	ctx := context.Background()
+	client := &github.Client{}
+	if configStruct.GithubToken != "" {
+		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: configStruct.GithubToken})
+		tc := oauth2.NewClient(ctx, ts)
+		client = github.NewClient(tc)
+	} else {
+		client = github.NewClient(nil)
+	}
+
+	// Fetch PR to get HEAD SHA
+	pr, _, err := client.PullRequests.Get(ctx, owner, repo, prNumber)
+	if err != nil {
+		return fmt.Errorf("error fetching PR to get HEAD SHA: %v", err)
+	}
+
+	headSHA := pr.GetHead().GetSHA()
+	if headSHA == "" {
+		return fmt.Errorf("could not get HEAD SHA from PR")
+	}
 
 	// For each suggestion, create a review comment
 	for _, suggestion := range suggestions {
@@ -134,8 +154,8 @@ func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]
 		req.Header.Set("Accept", "application/vnd.github.comfort-fade-preview+json")
 
 		// Execute request
-		client := &http.Client{}
-		resp, err := client.Do(req)
+		httpClient := &http.Client{}
+		resp, err := httpClient.Do(req)
 		if err != nil {
 			return fmt.Errorf("error posting PR comment: %v", err)
 		}
