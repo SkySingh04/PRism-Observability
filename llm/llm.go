@@ -120,9 +120,16 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*config.Observabi
 	if err := json.Unmarshal(body, &claudeResp); err != nil {
 		return nil, fmt.Errorf("error parsing Claude response: %v", err)
 	}
+	// Extract text from the array of content
+	var responseText string
+	for _, content := range claudeResp.Content {
+		if content.Type == "text" {
+			responseText += content.Text
+		}
+	}
 
 	// Extract JSON from Claude's response
-	jsonStr := utils.ExtractJSONFromText(claudeResp.Content.Text)
+	jsonStr := utils.ExtractJSONFromText(responseText)
 	if jsonStr == "" {
 		return nil, fmt.Errorf("no JSON found in Claude's response")
 	}
