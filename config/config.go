@@ -75,3 +75,10 @@ type ClaudeResponse struct {
 		Text string `json:"text"`
 	} `json:"content"`
 }
+
+// FileSuggestion represents a suggested change for a specific file and line
+type FileSuggestion struct {
+	FileName string
+	LineNum  string
+	Content  string
+}

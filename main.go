@@ -2,6 +2,7 @@ package main
 
 import (
 	"PRism/config"
+	"PRism/github"
 	"PRism/llm"
 	"PRism/utils"
 	"context"
@@ -12,11 +13,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/google/go-github/v53/github"
 	"github.com/joho/godotenv"
-	"golang.org/x/oauth2"
 )
 
 func main() {
@@ -28,12 +26,10 @@ func main() {
 
 	// Initialize GitHub client
 	ctx := context.Background()
-	githubClient := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: config.GithubToken},
-	)))
+	githubClient := github.InitializeGithubClient(config, ctx)
 
 	// Fetch PR details including diff
-	prDetails, err := fetchPRDetails(githubClient, config)
+	prDetails, err := github.FetchPRDetails(githubClient, config)
 	if err != nil {
 		log.Fatalf("Error fetching PR details: %v", err)
 	}
@@ -50,12 +46,15 @@ func main() {
 	}
 
 	// Prepare prompt for Claude
-	prompt := llm.BuildPrompt(prDetails, prdContent)
+	prompt := llm.BuildObservabilityPrompt(prDetails, prdContent)
 
 	// Call Claude API
-	recommendations, err := llm.CallClaudeAPI(prompt, config)
+	recommendations, err, responseText := llm.CallClaudeAPI(prompt, config)
 	if err != nil {
 		log.Fatalf("Error calling Claude API: %v", err)
+	}
+	if recommendations == nil {
+		fmt.Println(responseText)
 	}
 
 	// Output recommendations
@@ -105,79 +104,6 @@ func parseFlags() config.Config {
 	}
 
 	return config
-}
-
-func fetchPRDetails(client *github.Client, config config.Config) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
-
-	// Fetch PR details
-	pr, _, err := client.PullRequests.Get(
-		context.Background(),
-		config.RepoOwner,
-		config.RepoName,
-		config.PRNumber,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching PR details: %v", err)
-	}
-
-	result["title"] = pr.GetTitle()
-	result["description"] = pr.GetBody()
-	result["author"] = pr.GetUser().GetLogin()
-	result["created_at"] = pr.GetCreatedAt().Format(time.RFC3339)
-
-	// Fetch PR diff
-	opt := &github.ListOptions{}
-	ctx := context.Background()
-	commits, _, err := client.PullRequests.ListCommits(
-		ctx,
-		config.RepoOwner,
-		config.RepoName,
-		config.PRNumber,
-		opt,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching PR commits: %v", err)
-	}
-
-	// Get PR files (diff)
-	files, _, err := client.PullRequests.ListFiles(
-		context.Background(),
-		config.RepoOwner,
-		config.RepoName,
-		config.PRNumber,
-		opt,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching PR files: %v", err)
-	}
-
-	// Process files
-	fileDetails := []map[string]interface{}{}
-	totalDiffSize := 0
-
-	for _, file := range files {
-		// Check if we're exceeding max diff size
-		patchSize := len(file.GetPatch())
-		if totalDiffSize+patchSize > config.MaxDiffSize {
-			continue
-		}
-		totalDiffSize += patchSize
-
-		fileDetail := map[string]interface{}{
-			"filename":  file.GetFilename(),
-			"status":    file.GetStatus(),
-			"additions": file.GetAdditions(),
-			"deletions": file.GetDeletions(),
-			"patch":     file.GetPatch(),
-		}
-		fileDetails = append(fileDetails, fileDetail)
-	}
-
-	result["files"] = fileDetails
-	result["commits"] = len(commits)
-
-	return result, nil
 }
 
 func outputRecommendations(recommendations *config.ObservabilityRecommendation, config config.Config) {

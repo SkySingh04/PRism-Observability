@@ -1,119 +1,113 @@
-# Product Requirements Document: Calculator App
- 
+# Product Requirements Document (PRD)
 
- ## 1. Introduction
- 
+## 1. Overview
+**Project Name:** AI-Powered Open-Source Code Review Agent  
+**Mentors:** Hermione, Gourav, Yash, Shubham  
+**Objective:** Develop an AI-driven code review agent that integrates with CI/CD pipelines to provide automated feedback on coding style, security vulnerabilities, and best practices. The solution will enhance the Keploy Playground by improving language support, integrating testing/mocking, and streamlining the user onboarding process.  
 
- ### 1.1. Purpose
- 
+---
 
- This document outlines the requirements for a basic calculator application for iOS and Android platforms.
- 
+## 2. Goals and Objectives
+### Primary Goals
+- Deliver an AI-based code review tool that integrates with CI/CD pipelines.
+- Improve code quality, security, and best practices through automated analysis.
+- Ensure compatibility with major CI/CD platforms (e.g., GitHub Actions, GitLab CI/CD, Jenkins).
 
- ### 1.2. Goals
- 
+### Secondary Goals
+- Enhance Keploy Playground's language support for Python, Java, and Golang.
+- Improve user onboarding with simplified setup and comprehensive documentation.
+- Provide modular and extensible architecture for flexibility in future integrations.
 
- *   Provide a user-friendly interface for performing basic arithmetic operations.
- *   Ensure accurate calculations.
- *   Achieve a clean and intuitive design.
- 
+---
 
- ### 1.3. Target Audience
- 
+## 3. Key Features
+### 3.1. Code Analysis & Feedback
+- AI-driven insights for improved accuracy in code reviews.
+- Automated detection of:
+  - Coding style issues
+  - Security vulnerabilities
+  - Dependency risks using **OWASP Dependency-Check** and **deps.dev API**.
 
- General users who need a simple calculator for everyday calculations.
- 
+### 3.2. Multi-Language Support
+- Comprehensive support for:
+  - **Python**
+  - **Java**
+  - **Golang**
+  - Expandable to additional languages as needed.
 
- ## 2. Goals
- 
+### 3.3. CI/CD Integration
+- Support for integration with:
+  - **GitHub Actions**
+  - **GitLab CI/CD**
+  - **Jenkins**
+- Webhook-based architecture for seamless integration with custom pipelines.
 
- ### 2.1. Functional Requirements
- 
+### 3.4. Reporting and Output
+- Export results in:
+  - **JSON** for machine-readable insights.
+  - **Markdown** for clear inline feedback in pull requests.
+  - **PDF** for offline reporting.
 
- *   **Basic Arithmetic:** Addition, subtraction, multiplication, and division.
- *   **Decimal Numbers:** Support for decimal numbers.
- *   **Clear Function:** A button to clear the current input.
- *   **All Clear Function:** A button to clear the current calculation.
- *   **Display:** A display area to show input and results.
- *   **Error Handling:** Display error messages for invalid operations (e.g., division by zero).
- *   **Memory Functions:** Memory store, recall, add, subtract, and clear.
- *   **Square Root:** Calculate the square root of a number.
- *   **Percentage:** Calculate the percentage of a number.
- *   **Positive/Negative Toggle:** Change the sign of the current number.
- 
+### 3.5. Improved Onboarding Experience
+- Clear documentation for easy installation and configuration.
+- Interactive walkthroughs and examples for first-time users.
 
- ### 2.2. Non-Functional Requirements
- 
+---
 
- *   **Performance:** The app should perform calculations quickly and efficiently.
- *   **Usability:** The app should be easy to use and intuitive.
- *   **Accessibility:** The app should be accessible to users with disabilities.
- *   **Compatibility:** The app should be compatible with a wide range of devices and screen sizes.
- *   **Security:** The app should not collect or transmit any personal data.
- 
+## 4. Technical Requirements
+### 4.1. Tech Stack
+- **Golang** (Core engine for fast performance)
+- **JavaScript/TypeScript** (Frontend integration & UI improvements)
+- **AI/ML Models** (For improved code insights and precision)
 
- ## 3. User Interface (UI)
- 
+### 4.2. Integration Tools
+- **OWASP Dependency-Check**
+- **deps.dev API**
+- **ESLint** (JavaScript/TypeScript linting)
+- **GolangCI-Lint** (Golang linting)
 
- ### 3.1. Layout
- 
+---
 
- *   The main screen should consist of a display area at the top and a keypad below.
- *   The keypad should include buttons for digits (0-9), operators (+, -, \*, /), decimal point (.), clear (C), all clear (AC), equals (=), and memory functions (M+, M-, MR, MC).
- 
+## 5. User Stories
+### 5.1. Developer Experience
+- *As a developer, I want to receive clear, actionable feedback on code style and security vulnerabilities so that I can improve my code quality efficiently.*
+- *As a DevOps engineer, I want a webhook-based solution that integrates seamlessly with my CI/CD pipelines to automate code reviews.*
 
- ### 3.2. Design
- 
+### 5.2. Security Enhancement
+- *As a security analyst, I want to detect vulnerable dependencies in my project using OWASP Dependency-Check and deps.dev API.*
 
- *   Clean and simple design.
- *   Easy-to-read font for numbers and operators.
- *   Visually distinct buttons for different functions.
- *   Responsive design that adapts to different screen sizes.
- 
+---
 
- ## 4. Technical Requirements
- 
+## 6. Milestones & Timeline
+1. **Week 1-2:** Research and design architecture.
+2. **Week 3-4:** Implement core code review engine with language support.
+3. **Week 5-6:** Integrate security scanning tools.
+4. **Week 7-8:** Develop CI/CD integration with webhook support.
+5. **Week 9-10:** Build comprehensive reporting system (JSON, Markdown, PDF).
+6. **Week 11-12:** Final testing, documentation, and user onboarding improvements.
 
- ### 4.1. Platform
- 
+---
 
- *   iOS
- *   Android
- 
+## 7. Success Metrics
+- Successful integration with major CI/CD platforms.
+- Ability to analyze Python, Java, and Golang projects with high accuracy.
+- Automated reporting with actionable insights in various formats.
+- Positive developer feedback on usability and effectiveness.
 
- ### 4.2. Technology Stack
- 
+---
 
- *   Native iOS (Swift or Objective-C)
- *   Native Android (Kotlin or Java)
- 
+## 8. Risks and Mitigation
+| **Risk**                      | **Mitigation Strategy**                       |
+|-------------------------------|------------------------------------------------|
+| Integration issues with CI/CD  | Develop clear integration guides and fallback options. |
+| Performance bottlenecks        | Optimize code analysis engine for efficiency. |
+| Limited adoption               | Provide comprehensive onboarding tutorials and demos. |
 
- ### 4.3. APIs
- 
+---
 
- *   No external APIs are required for basic functionality.
- 
+## 9. References
+- **ESLint**: Pluggable JavaScript Linter  
+- **GolangCI-Lint**: Fast Go linters runner  
+- **OWASP Dependency-Check**: Vulnerability detection tool  
+- **deps.dev API**: Google’s dependency insights API
 
- ## 5. Release Criteria
- 
-
- *   All functional and non-functional requirements are met.
- *   The app has been thoroughly tested on a variety of devices.
- *   The app is stable and does not crash.
- *   The user interface is polished and user-friendly.
- 
-
- ## 6. Future Considerations
- 
-
- *   Scientific calculator functions (trigonometry, logarithms, etc.).
- *   Unit conversions.
- *   Themes (light and dark mode).
- *   History of calculations.
- 
-
- ## 7. Open Issues
- 
-
- *   Accessibility testing is pending.
- *   Performance testing on low-end devices is pending.
