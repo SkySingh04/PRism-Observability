@@ -76,8 +76,6 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 	b.WriteString("   - System events\n")
 	b.WriteString("   - Performance metrics\n\n")
 
-	b.WriteString("IMPORTANT : Also, provide a summary paragraph of all the suggested changes starting with SUMMARY:, along with the reason for each change and sort them by priority (High, Medium, Low).\n\n")
-
 	b.WriteString("Format each suggestion as follows:\n")
 	b.WriteString("```\n")
 	b.WriteString("FILE: filename.go\n")
@@ -90,6 +88,7 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 	b.WriteString("```\n")
 
 	b.WriteString("Follow Go best practices and match the existing code style. Only suggest changes related to observability instrumentation.")
+	b.WriteString("IMPORTANT : Also, provide a summary paragraph of all the suggested changes starting with SUMMARY:, along with the reason for each change and sort them by priority (High, Medium, Low).\n\n")
 
 	return b.String()
 }
