@@ -95,33 +95,32 @@ func ParseLLMSuggestionsForAlerts(llmResponse string) ([]config.AlertSuggestion,
 		return suggestions, nil
 	}
 
-	// Find all alert suggestion blocks
-	alertPattern := regexp.MustCompile(`ALERT: (.+?)\nTYPE: (.+?)\nPRIORITY: (.+?)\nQUERIES:\n` +
-		"```json\n" + `((?s:.+?))` + "```\n" +
-		`PANELS:\n` + "```json\n" + `((?s:.+?))` + "```\n" +
-		`ALERTS:\n` + "```json\n" + `((?s:.+?))` + "```")
+	// Find all alert suggestion blocks based on the format in BuildAlertsPrompt
+	alertPattern := regexp.MustCompile(`ALERT: (.+?)\nTYPE: (.+?)\nPRIORITY: (.+?)\nQUERY:\n` +
+		"```\n" + `((?s:.+?))` + "```\n" +
+		`DESCRIPTION: (.+?)\n` +
+		`THRESHOLD: (.+?)\n` +
+		`DURATION: (.+?)\n` +
+		`NOTIFICATION: (.+?)\n` +
+		`RUNBOOK_LINK: (.+?)(?:\n\n|\n?$)`)
 
 	matches := alertPattern.FindAllStringSubmatch(llmResponse, -1)
 
 	for _, match := range matches {
-		if len(match) != 7 {
+		if len(match) != 10 {
 			continue
 		}
 
-		name := match[1]
-		alertType := match[2]
-		priority := match[3]
-		queries := match[4]
-		panels := match[5]
-		alerts := match[6]
-
 		suggestion := config.AlertSuggestion{
-			Name:     name,
-			Type:     alertType,
-			Priority: priority,
-			Queries:  queries,
-			Panels:   panels,
-			Alerts:   alerts,
+			Name:         match[1],
+			Type:         match[2],
+			Priority:     match[3],
+			Query:        strings.TrimSpace(match[4]),
+			Description:  match[5],
+			Threshold:    match[6],
+			Duration:     match[7],
+			Notification: match[8],
+			RunbookLink:  match[9],
 		}
 
 		suggestions = append(suggestions, suggestion)

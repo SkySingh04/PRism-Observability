@@ -220,5 +220,99 @@ func BuildDashboardPrompt(prDetails map[string]interface{}, prdContent string) s
 }
 
 func BuildAlertsPrompt(prDetails map[string]interface{}, prdContent string) string {
-	return ""
+	var b strings.Builder
+
+	b.WriteString("# Observability Alerts Analysis\n\n")
+	b.WriteString("As an AI observability assistant, analyze the following PR and PRD to suggest alerts for:\n")
+	b.WriteString("1. OpenTelemetry-based metrics and trace alerts\n")
+	b.WriteString("2. Log-based alerts for error patterns\n")
+	b.WriteString("3. SLO/SLI monitoring alerts\n\n")
+
+	// Add PR details
+	b.WriteString("## Pull Request Details\n\n")
+	b.WriteString(fmt.Sprintf("Title: %s\n", prDetails["title"]))
+	b.WriteString(fmt.Sprintf("Description: %s\n", prDetails["description"]))
+	b.WriteString(fmt.Sprintf("Author: %s\n", prDetails["author"]))
+	b.WriteString(fmt.Sprintf("Created: %s\n\n", prDetails["created_at"]))
+
+	// Add file diffs
+	files := prDetails["files"].([]map[string]interface{})
+	b.WriteString(fmt.Sprintf("## File Changes (%d files)\n\n", len(files)))
+
+	for _, file := range files {
+		filename := file["filename"].(string)
+		status := file["status"].(string)
+		additions := file["additions"].(int)
+		deletions := file["deletions"].(int)
+		patch := file["patch"].(string)
+
+		// Include all files for alert analysis
+		b.WriteString(fmt.Sprintf("### %s (%s, +%d, -%d)\n\n", filename, status, additions, deletions))
+		b.WriteString("```diff\n")
+		b.WriteString(patch)
+		b.WriteString("\n```\n\n")
+	}
+
+	// Add PRD if provided
+	if prdContent != "" {
+		b.WriteString("## Product Requirements Document\n\n")
+		b.WriteString(prdContent)
+		b.WriteString("\n\n")
+	}
+
+	// Instructions for alert suggestions
+	b.WriteString("## Instructions\n\n")
+	b.WriteString("Analyze the provided code changes and identify all observability instrumentation including OpenTelemetry spans, metrics, logs, and events. Then suggest appropriate alerts that should be configured.\n\n")
+
+	b.WriteString("For each type of telemetry data, suggest:\n\n")
+
+	b.WriteString("1. OpenTelemetry Metric and Trace Alerts:\n")
+	b.WriteString("   - High error rates or latency\n")
+	b.WriteString("   - Unusual traffic patterns\n")
+	b.WriteString("   - Dependency failures\n\n")
+
+	b.WriteString("2. Log-based Alerts:\n")
+	b.WriteString("   - Critical error patterns\n")
+	b.WriteString("   - Authentication failures\n")
+	b.WriteString("   - Data integrity issues\n\n")
+
+	b.WriteString("3. SLO/SLI Alerts:\n")
+	b.WriteString("   - Error budget burn rate\n")
+	b.WriteString("   - Latency percentile thresholds\n")
+	b.WriteString("   - Availability metrics\n\n")
+
+	// API-specific format for parsing
+	b.WriteString("Format EACH alert suggestion in EXACTLY this format for parsing:\n\n")
+
+	b.WriteString("ALERT: [Alert name]\n")
+	b.WriteString("TYPE: [metric, log, or slo]\n")
+	b.WriteString("PRIORITY: [P0, P1, or P2]\n")
+	b.WriteString("QUERY:\n")
+	b.WriteString("```\n")
+	b.WriteString("sum(rate(span_count{status_code=\"ERROR\"}[5m])) / sum(rate(span_count[5m])) > 0.05\n")
+	b.WriteString("```\n")
+	b.WriteString("DESCRIPTION: [Brief description of what the alert means]\n")
+	b.WriteString("THRESHOLD: [Numerical threshold or condition]\n")
+	b.WriteString("DURATION: [How long condition must be true, e.g. 5m]\n")
+	b.WriteString("NOTIFICATION: [Where alert should be sent, e.g. slack-sre-channel]\n")
+	b.WriteString("RUNBOOK_LINK: [Link to runbook or troubleshooting guide]\n\n")
+
+	b.WriteString("IMPORTANT GUIDELINES:\n")
+	b.WriteString("1. Only suggest alerts based on telemetry data present in the code\n")
+	b.WriteString("2. Focus on actionable alerts, avoid noise\n")
+	b.WriteString("3. Use valid PromQL, LogQL, or other appropriate query languages\n")
+	b.WriteString("4. Prioritize alerts: P0=critical, P1=warning, P2=info\n")
+	b.WriteString("5. Provide alert configuration in EXACTLY the format specified above\n")
+	b.WriteString("6. Include all required fields\n\n")
+
+	b.WriteString("## Identified Telemetry\n")
+	b.WriteString("Before providing alert suggestions, list all identified spans, metrics, logs, and events with their attributes.\n\n")
+
+	b.WriteString("## Alert Suggestions\n")
+	b.WriteString("List each alert suggestion in the specified format.\n\n")
+
+	b.WriteString("SUMMARY:\n")
+	b.WriteString("After your detailed analysis, provide a prioritized summary of all suggested alerts with business justification and expected value.\n\n")
+
+	return b.String()
 }

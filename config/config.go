@@ -138,10 +138,13 @@ type DashboardSuggestion struct {
 }
 
 type AlertSuggestion struct {
-	Name     string
-	Type     string
-	Priority string
-	Queries  string
-	Panels   string
-	Alerts   string
+	Name         string
+	Type         string
+	Priority     string
+	Query        string
+	Description  string
+	Threshold    string
+	Duration     string
+	Notification string
+	RunbookLink  string
 }
