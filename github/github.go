@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -95,25 +94,57 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	return result, nil
 }
 
-func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config, summarry string) error {
-	// Get PR details
-	prNumber := configStruct.PRNumber
-	owner := configStruct.RepoOwner
-	repo := configStruct.RepoName
+// PostSummaryComment posts a summary comment to the PR's conversation
+func PostSummaryComment(owner, repo string, prNumber int, summary, token string) error {
+	if summary == "" {
+		return nil // No summary to post
+	}
 
-	// Since head_sha isn't in prDetails, we need to fetch it
+	summaryPayload := map[string]interface{}{
+		"body": summary,
+	}
+
+	summaryJSON, err := json.Marshal(summaryPayload)
+	if err != nil {
+		return fmt.Errorf("error marshaling summary payload: %v", err)
+	}
+
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d/comments", owner, repo, prNumber)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(summaryJSON))
+	if err != nil {
+		return fmt.Errorf("error creating HTTP request for summary: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("token %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error posting summary comment: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("GitHub API error (%d) for summary comment", resp.StatusCode)
+	}
+
+	return nil
+}
+
+// CreatePRComments handles inline comments and summary posting
+func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
 	ctx := context.Background()
-	client := &github.Client{}
+	client := github.NewClient(nil)
+
 	if configStruct.GithubToken != "" {
 		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: configStruct.GithubToken})
 		tc := oauth2.NewClient(ctx, ts)
 		client = github.NewClient(tc)
-	} else {
-		client = github.NewClient(nil)
 	}
 
 	// Fetch PR to get HEAD SHA
-	pr, _, err := client.PullRequests.Get(ctx, owner, repo, prNumber)
+	pr, _, err := client.PullRequests.Get(ctx, configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber)
 	if err != nil {
 		return fmt.Errorf("error fetching PR to get HEAD SHA: %v", err)
 	}
@@ -123,79 +154,42 @@ func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]
 		return fmt.Errorf("could not get HEAD SHA from PR")
 	}
 
-	// Post summary comment
-	if summarry != "" {
-		summaryPayload := map[string]interface{}{
-			"body": summarry,
-		}
-
-		summaryJSON, err := json.Marshal(summaryPayload)
-		if err != nil {
-			return fmt.Errorf("error marshaling summary payload: %v", err)
-		}
-
-		url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d/comments", owner, repo, prNumber)
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer(summaryJSON))
-		if err != nil {
-			return fmt.Errorf("error creating HTTP request for summary: %v", err)
-		}
-
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", configStruct.GithubToken))
-		req.Header.Set("Content-Type", "application/json")
-
-		httpClient := &http.Client{}
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("error posting summary comment: %v", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			bodyBytes, _ := ioutil.ReadAll(resp.Body)
-			return fmt.Errorf("GitHub API error (%d) for summary: %s", resp.StatusCode, string(bodyBytes))
-		}
+	// Post the summary comment
+	if err := PostSummaryComment(configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, summary, configStruct.GithubToken); err != nil {
+		return err
 	}
 
-	// For each suggestion, create a review comment
+	// Post inline comments
 	for _, suggestion := range suggestions {
 		commentBody := fmt.Sprintf("```suggestion\n%s\n```", suggestion.Content)
 
-		// Convert LineNum string to integer
 		lineNum, err := strconv.Atoi(suggestion.LineNum)
 		if err != nil {
 			return fmt.Errorf("invalid line number: %v", err)
 		}
 
-		// Create request payload with correct parameters
 		payload := map[string]interface{}{
 			"commit_id": headSHA,
 			"path":      suggestion.FileName,
-			"line":      lineNum, // This should be an integer
+			"line":      lineNum,
 			"body":      commentBody,
 		}
 
-		// Convert to JSON
 		jsonData, err := json.Marshal(payload)
 		if err != nil {
 			return fmt.Errorf("error marshaling comment payload: %v", err)
 		}
 
-		// Create GitHub API request to post comment
-		url := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls/%d/comments",
-			owner, repo, prNumber)
-
+		url := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls/%d/comments", configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber)
 		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 		if err != nil {
 			return fmt.Errorf("error creating HTTP request: %v", err)
 		}
 
-		// Make sure to set the correct content-type and preview header
 		req.Header.Set("Accept", "application/vnd.github.comfort-fade-preview+json")
 		req.Header.Set("Authorization", fmt.Sprintf("token %s", configStruct.GithubToken))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/vnd.github.comfort-fade-preview+json")
 
-		// Execute request
 		httpClient := &http.Client{}
 		resp, err := httpClient.Do(req)
 		if err != nil {
@@ -203,10 +197,8 @@ func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]
 		}
 		defer resp.Body.Close()
 
-		// Check response
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			bodyBytes, _ := ioutil.ReadAll(resp.Body)
-			return fmt.Errorf("GitHub API error (%d): %s", resp.StatusCode, string(bodyBytes))
+			return fmt.Errorf("GitHub API error (%d): %s", resp.StatusCode, string(jsonData))
 		}
 	}
 

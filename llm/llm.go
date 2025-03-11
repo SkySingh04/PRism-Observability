@@ -76,6 +76,13 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 	b.WriteString("   - System events\n")
 	b.WriteString("   - Performance metrics\n\n")
 
+	b.WriteString("EXTREMELY IMPORTANT CONSTRAINTS:\n")
+	b.WriteString("1. ONLY suggest changes to code that appears in the diff patches above\n")
+	b.WriteString("2. DO NOT suggest adding import statements or new files or functions that aren't in the diff\n")
+	b.WriteString("3. Your suggestions should be insertions or modifications to the exact code blocks shown in the diff\n")
+	b.WriteString("4. Always check if OpenTelemetry or logging packages are already imported before suggesting their use\n")
+	b.WriteString("5. If imports are needed, only suggest them if the import section is visible in the diff\n\n")
+
 	b.WriteString("Format each suggestion as follows:\n")
 	b.WriteString("```\n")
 	b.WriteString("FILE: filename.go\n")
@@ -88,7 +95,7 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 	b.WriteString("```\n")
 
 	b.WriteString("Follow Go best practices and match the existing code style. Only suggest changes related to observability instrumentation.")
-	b.WriteString("IMPORTANT : Also, provide a summary paragraph of all the suggested changes starting with SUMMARY:, along with the reason for each change and sort them by priority (High, Medium, Low).\n\n")
+	b.WriteString("IMPORTANT: Also, provide a summary paragraph of all the suggested changes starting with SUMMARY:, along with the reason for each change and sort them by priority (High, Medium, Low).\n\n")
 
 	return b.String()
 }
@@ -168,6 +175,8 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSug
 	}
 
 	summary, err := utils.ParseLLMSummary(responseText)
+	// fmt.Println("Summary:")
+	// fmt.Println(summary)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing summary: %v", err), responseText, ""
 	}

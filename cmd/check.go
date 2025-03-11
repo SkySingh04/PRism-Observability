@@ -57,18 +57,18 @@ func runCheck() {
 	prompt := llm.BuildObservabilityPrompt(prDetails, prdContent)
 
 	// Call Claude API
-	suggestions, err, responseText, summary := llm.CallClaudeAPI(prompt, cfg)
+	suggestions, err, _, summary := llm.CallClaudeAPI(prompt, cfg)
 	if err != nil {
 		log.Fatalf("Error calling Claude API: %v", err)
 	}
 
 	if suggestions == nil {
 		fmt.Println("No suggestions found")
-		fmt.Println("Response text:")
-		fmt.Println(responseText)
+		// fmt.Println("Response text:")
+		// fmt.Println(responseText)
 	} else {
-		fmt.Println("Suggestions found:")
-		fmt.Println(suggestions)
+		fmt.Println("Suggestions found!")
+		// fmt.Println(suggestions)
 
 		// Create PR comments if suggestions exist
 		err := github.CreatePRComments(*suggestions, prDetails, cfg, summary)
