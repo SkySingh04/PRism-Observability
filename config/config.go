@@ -8,16 +8,21 @@ import (
 
 func LoadConfig() Config {
 	cfg := Config{
-		GithubToken:   viper.GetString("github_token"),
-		ClaudeAPIKey:  viper.GetString("claude_api_key"),
-		RepoOwner:     viper.GetString("repo_owner"),
-		RepoName:      viper.GetString("repo_name"),
-		PRNumber:      viper.GetInt("pr_number"),
-		PRDFilePath:   viper.GetString("prd_file"),
-		OutputFormat:  viper.GetString("output_format"),
-		MaxDiffSize:   viper.GetInt("max_diff_size"),
-		ClaudeModel:   viper.GetString("claude_model"),
-		ClaudeBaseURL: viper.GetString("claude_base_url"),
+		GithubToken:                viper.GetString("github_token"),
+		ClaudeAPIKey:               viper.GetString("claude_api_key"),
+		RepoOwner:                  viper.GetString("repo_owner"),
+		RepoName:                   viper.GetString("repo_name"),
+		PRNumber:                   viper.GetInt("pr_number"),
+		PRDFilePath:                viper.GetString("prd_file"),
+		OutputFormat:               viper.GetString("output_format"),
+		MaxDiffSize:                viper.GetInt("max_diff_size"),
+		ClaudeModel:                viper.GetString("claude_model"),
+		ClaudeBaseURL:              viper.GetString("claude_base_url"),
+		AmplitudeSecretKey:         viper.GetString("amplitude_secret_key"),
+		AmplitudeAPIKey:            viper.GetString("amplitude_api_key"),
+		AmplitudeAPIToken:          viper.GetString("amplitude_api_token"),
+		GrafanaServiceAccountToken: viper.GetString("grafana_service_account_token"),
+		GrafanaURL:                 viper.GetString("grafana_url"),
 	}
 
 	// Validate required parameters
@@ -36,20 +41,21 @@ func LoadConfig() Config {
 
 // Config holds configuration for the application
 type Config struct {
-	GithubToken        string
-	ClaudeAPIKey       string
-	RepoOwner          string
-	RepoName           string
-	PRNumber           int
-	PRDFilePath        string
-	OutputFormat       string
-	MaxDiffSize        int
-	ClaudeModel        string
-	ClaudeBaseURL      string
-	GrafanaAPIToken    string
-	GrafanaURL         string
-	AmplitudeAPIKey    string
-	AmplitudeSecretKey string
+	GithubToken                string
+	ClaudeAPIKey               string
+	RepoOwner                  string
+	RepoName                   string
+	PRNumber                   int
+	PRDFilePath                string
+	OutputFormat               string
+	MaxDiffSize                int
+	ClaudeModel                string
+	ClaudeBaseURL              string
+	GrafanaServiceAccountToken string
+	GrafanaURL                 string
+	AmplitudeAPIKey            string
+	AmplitudeSecretKey         string
+	AmplitudeAPIToken          string
 }
 
 // ObservabilityRecommendation represents the recommendations from Claude

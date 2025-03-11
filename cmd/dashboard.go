@@ -59,6 +59,8 @@ func runDashboard() {
 
 	// Call Claude API
 	suggestions, err, _, summary := llm.CallClaudeAPIForDashboards(prompt, cfg)
+	log.Printf("Summary: %s", summary)
+	log.Printf("Suggestions: %v", suggestions)
 	if err != nil {
 		log.Fatalf("Error calling Claude API: %v", err)
 	}

@@ -9,10 +9,9 @@ import (
 	"net/http"
 )
 
-// CreateGrafanaDashboard makes an API call to create a Grafana dashboard
 func CreateGrafanaDashboard(suggestion config.DashboardSuggestion, cfg config.Config) error {
-	if cfg.GrafanaAPIToken == "" || cfg.GrafanaURL == "" {
-		return fmt.Errorf("Grafana API token or URL not configured")
+	if cfg.GrafanaServiceAccountToken == "" || cfg.GrafanaURL == "" {
+		return fmt.Errorf("Grafana service account token or URL not configured")
 	}
 
 	// Parse the queries and panels into proper JSON objects
@@ -85,7 +84,7 @@ func CreateGrafanaDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", cfg.GrafanaAPIToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", cfg.GrafanaServiceAccountToken))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

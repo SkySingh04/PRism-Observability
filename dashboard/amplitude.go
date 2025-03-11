@@ -4,17 +4,15 @@ import (
 	"PRism/config"
 	"PRism/utils"
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
-// CreateAmplitudeDashboard makes an API call to create an Amplitude dashboard
 func CreateAmplitudeDashboard(suggestion config.DashboardSuggestion, cfg config.Config) error {
 	if cfg.AmplitudeAPIKey == "" || cfg.AmplitudeSecretKey == "" {
-		return fmt.Errorf("Amplitude API keys not configured")
+		return fmt.Errorf("Amplitude API key or secret key not configured")
 	}
 
 	// Parse the queries and panels
@@ -79,15 +77,15 @@ func CreateAmplitudeDashboard(suggestion config.DashboardSuggestion, cfg config.
 		return fmt.Errorf("error marshaling dashboard JSON: %v", err)
 	}
 
-	url := "https://analytics.amplitude.com/api/2/dashboard"
+	// Use the correct Amplitude API endpoint
+	url := "https://amplitude.com/api/2/dashboard"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(dashboardJSON))
 	if err != nil {
 		return fmt.Errorf("error creating HTTP request: %v", err)
 	}
 
-	// Amplitude uses Basic Auth with API key and Secret key
-	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", cfg.AmplitudeAPIKey, cfg.AmplitudeSecretKey)))
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", auth))
+	// Use basic authentication instead of bearer token
+	req.SetBasicAuth(cfg.AmplitudeAPIKey, cfg.AmplitudeSecretKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}

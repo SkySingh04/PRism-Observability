@@ -67,6 +67,11 @@ func init() {
 	viper.BindPFlag("max_diff_size", rootCmd.PersistentFlags().Lookup("max-diff-size"))
 	viper.BindPFlag("claude_model", rootCmd.PersistentFlags().Lookup("claude-model"))
 	viper.BindPFlag("claude_base_url", rootCmd.PersistentFlags().Lookup("claude-base-url"))
+	viper.BindPFlag("amplitude_secret_key", rootCmd.PersistentFlags().Lookup("amplitude_secret_key"))
+	viper.BindPFlag("amplitude_api_key", rootCmd.PersistentFlags().Lookup("amplitude_api_key"))
+	viper.BindPFlag("grafana_service_account_token", rootCmd.PersistentFlags().Lookup("grafana_service_account_token"))
+	viper.BindPFlag("grafana_url", rootCmd.PersistentFlags().Lookup("grafana_url"))
+	viper.BindPFlag("amplitude_api_token", rootCmd.PersistentFlags().Lookup("amplitude_api_token"))
 
 	// Bind env variables
 	viper.BindEnv("github_token", "GITHUB_TOKEN")
@@ -79,6 +84,11 @@ func init() {
 	viper.BindEnv("max_diff_size", "MAX_DIFF_SIZE")
 	viper.BindEnv("claude_model", "CLAUDE_MODEL")
 	viper.BindEnv("claude_base_url", "CLAUDE_BASE_URL")
+	viper.BindEnv("amplitude_secret_key", "AMPLITUDE_SECRET_KEY")
+	viper.BindEnv("amplitude_api_key", "AMPLITUDE_API_KEY")
+	viper.BindEnv("grafana_service_account_token", "GRAFANA_SERVICE_ACCOUNT_TOKEN")
+	viper.BindEnv("grafana_url", "GRAFANA_URL")
+	viper.BindEnv("amplitude_api_token", "AMPLITUDE_API_TOKEN")
 }
 
 // initConfig reads in config file and ENV variables if set
