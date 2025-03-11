@@ -252,5 +252,53 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 }
 
 func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
+	ctx := context.Background()
+	client := github.NewClient(nil)
+
+	if configStruct.GithubToken != "" {
+		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: configStruct.GithubToken})
+		tc := oauth2.NewClient(ctx, ts)
+		client = github.NewClient(tc)
+	}
+
+	// Post the summary comment first
+	if err := PostSummaryComment(configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, summary, configStruct.GithubToken); err != nil {
+		return err
+	}
+
+	// Create a detailed comment for each alert suggestion
+	for _, suggestion := range suggestions {
+		// Format a readable alert suggestion comment
+		commentBody := fmt.Sprintf("## Alert Suggestion: %s\n\n", suggestion.Name)
+		commentBody += fmt.Sprintf("**Type:** %s\n", suggestion.Type)
+		commentBody += fmt.Sprintf("**Priority:** %s\n\n", suggestion.Priority)
+
+		commentBody += "### Query\n```json\n" + suggestion.Query + "\n```\n\n"
+		commentBody += fmt.Sprintf("### Description\n%s\n\n", suggestion.Description)
+		commentBody += fmt.Sprintf("### Threshold\n%s\n\n", suggestion.Threshold)
+		commentBody += fmt.Sprintf("### Duration\n%s\n\n", suggestion.Duration)
+		commentBody += fmt.Sprintf("### Notification\n%s\n\n", suggestion.Notification)
+
+		if suggestion.RunbookLink != "" {
+			commentBody += fmt.Sprintf("### Runbook\n[Link to Runbook](%s)\n\n", suggestion.RunbookLink)
+		}
+
+		// Add action buttons - these will be parsed by the GitHub action
+		commentBody += "<details>\n"
+		commentBody += "<summary>Click to create this alert</summary>\n\n"
+		commentBody += fmt.Sprintf("<!-- ALERT_CREATE:%s:%s -->\n", suggestion.Type, suggestion.Name)
+		commentBody += "</details>\n"
+
+		// Post the comment
+		issueComment := &github.IssueComment{
+			Body: github.String(commentBody),
+		}
+
+		_, _, err := client.Issues.CreateComment(ctx, configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, issueComment)
+		if err != nil {
+			return fmt.Errorf("error posting alert comment: %v", err)
+		}
+	}
+
 	return nil
 }

@@ -2,12 +2,16 @@
 package cmd
 
 import (
+	"PRism/alerts"
 	"PRism/config"
 	"PRism/github"
 	"PRism/llm"
+	"bufio"
 	"context"
 	"io/ioutil"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -58,23 +62,56 @@ func runAlerts() {
 	prompt := llm.BuildAlertsPrompt(prDetails, prdContent)
 
 	// Call Claude API
-	suggestions, err, _, summary := llm.CallClaudeAPIForAlerts(prompt, cfg)
+	suggestions, err, responseText, summary := llm.CallClaudeAPIForAlerts(prompt, cfg)
+	log.Printf("Summary: %s", summary)
 	if err != nil {
 		log.Fatalf("Error calling Claude API: %v", err)
 	}
 
-	if suggestions == nil {
-		log.Println("No suggestions found")
-		// log.Println("Response text:")
-		// log.Println(responseText)
+	if suggestions == nil || len(*suggestions) == 0 {
+		log.Println("No alert suggestions found")
+		log.Println("Response text:")
+		log.Println(responseText)
 	} else {
-		log.Println("Suggestions found!")
-		// log.Println(suggestions)
+		log.Printf("Found %d alert suggestions!", len(*suggestions))
+
+		// Log the suggestions
+		for i, suggestion := range *suggestions {
+			log.Printf("Alert %d: %s (%s) - Priority: %s", i+1, suggestion.Name, suggestion.Type, suggestion.Priority)
+		}
 
 		// Create PR comments if suggestions exist
 		err := github.CreateAlertsPRComments(*suggestions, prDetails, cfg, summary)
 		if err != nil {
 			log.Fatalf("Error creating Alerts PR comments: %v", err)
+		}
+
+		// Ask user if they want to create the alerts now
+		reader := bufio.NewReader(os.Stdin)
+		log.Println("\nDo you want to create these alerts now? (y/n)")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(strings.ToLower(input))
+
+		if input == "y" || input == "yes" {
+			for _, suggestion := range *suggestions {
+				if suggestion.Type == "prometheus" || suggestion.Type == "metric" {
+					err := alerts.CreatePrometheusAlert(suggestion, cfg)
+					if err != nil {
+						log.Printf("Error creating Prometheus alert '%s': %v", suggestion.Name, err)
+					} else {
+						log.Printf("Successfully created Prometheus alert: %s", suggestion.Name)
+					}
+				} else if suggestion.Type == "datadog" {
+					err := alerts.CreateDatadogAlert(suggestion, cfg)
+					if err != nil {
+						log.Printf("Error creating Datadog alert '%s': %v", suggestion.Name, err)
+					} else {
+						log.Printf("Successfully created Datadog alert: %s", suggestion.Name)
+					}
+				}
+			}
+		} else {
+			log.Println("Alert creation skipped. You can create them later from the PR comments.")
 		}
 	}
 }

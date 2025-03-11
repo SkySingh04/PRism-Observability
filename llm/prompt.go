@@ -226,7 +226,6 @@ func BuildAlertsPrompt(prDetails map[string]interface{}, prdContent string) stri
 	b.WriteString("As an AI observability assistant, analyze the following PR and PRD to suggest alerts for:\n")
 	b.WriteString("1. OpenTelemetry-based metrics and trace alerts\n")
 	b.WriteString("2. Log-based alerts for error patterns\n")
-	b.WriteString("3. SLO/SLI monitoring alerts\n\n")
 
 	// Add PR details
 	b.WriteString("## Pull Request Details\n\n")
@@ -276,16 +275,11 @@ func BuildAlertsPrompt(prDetails map[string]interface{}, prdContent string) stri
 	b.WriteString("   - Authentication failures\n")
 	b.WriteString("   - Data integrity issues\n\n")
 
-	b.WriteString("3. SLO/SLI Alerts:\n")
-	b.WriteString("   - Error budget burn rate\n")
-	b.WriteString("   - Latency percentile thresholds\n")
-	b.WriteString("   - Availability metrics\n\n")
-
 	// API-specific format for parsing
 	b.WriteString("Format EACH alert suggestion in EXACTLY this format for parsing:\n\n")
 
 	b.WriteString("ALERT: [Alert name]\n")
-	b.WriteString("TYPE: [metric, log, or slo]\n")
+	b.WriteString("TYPE: [metric or log]\n")
 	b.WriteString("PRIORITY: [P0, P1, or P2]\n")
 	b.WriteString("QUERY:\n")
 	b.WriteString("```\n")
