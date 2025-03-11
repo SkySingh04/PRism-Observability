@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -35,7 +35,7 @@ maintain code quality and standards.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 }
@@ -90,7 +90,7 @@ func initConfig() {
 		// Find home directory
 		home, err := os.UserHomeDir()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(1)
 		}
 
@@ -103,6 +103,6 @@ func initConfig() {
 
 	// If a config file is found, read it in
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }

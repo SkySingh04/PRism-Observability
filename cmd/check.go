@@ -6,12 +6,10 @@ import (
 	"PRism/github"
 	"PRism/llm"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"log"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // checkCmd represents the check command
@@ -30,7 +28,7 @@ func init() {
 }
 
 func runCheck() {
-	cfg := loadConfig()
+	cfg := config.LoadConfig()
 
 	// Initialize GitHub client
 	ctx := context.Background()
@@ -63,12 +61,12 @@ func runCheck() {
 	}
 
 	if suggestions == nil {
-		fmt.Println("No suggestions found")
-		// fmt.Println("Response text:")
-		// fmt.Println(responseText)
+		log.Println("No suggestions found")
+		// log.Println("Response text:")
+		// log.Println(responseText)
 	} else {
-		fmt.Println("Suggestions found!")
-		// fmt.Println(suggestions)
+		log.Println("Suggestions found!")
+		// log.Println(suggestions)
 
 		// Create PR comments if suggestions exist
 		err := github.CreatePRComments(*suggestions, prDetails, cfg, summary)
@@ -76,32 +74,4 @@ func runCheck() {
 			log.Fatalf("Error creating PR comments: %v", err)
 		}
 	}
-}
-
-func loadConfig() config.Config {
-	cfg := config.Config{
-		GithubToken:   viper.GetString("github_token"),
-		ClaudeAPIKey:  viper.GetString("claude_api_key"),
-		RepoOwner:     viper.GetString("repo_owner"),
-		RepoName:      viper.GetString("repo_name"),
-		PRNumber:      viper.GetInt("pr_number"),
-		PRDFilePath:   viper.GetString("prd_file"),
-		OutputFormat:  viper.GetString("output_format"),
-		MaxDiffSize:   viper.GetInt("max_diff_size"),
-		ClaudeModel:   viper.GetString("claude_model"),
-		ClaudeBaseURL: viper.GetString("claude_base_url"),
-	}
-
-	// Validate required parameters
-	if cfg.GithubToken == "" {
-		log.Fatal("GitHub token is required. Set GITHUB_TOKEN env var or use --github-token flag")
-	}
-	if cfg.ClaudeAPIKey == "" {
-		log.Fatal("Claude API key is required. Set CLAUDE_API_KEY env var or use --claude-api-key flag")
-	}
-	if cfg.RepoOwner == "" || cfg.RepoName == "" || cfg.PRNumber == 0 {
-		log.Fatal("Repository details and PR number are required. Set REPO_OWNER, REPO_NAME, PR_NUMBER env vars or use flags")
-	}
-
-	return cfg
 }

@@ -25,8 +25,8 @@ func init() {
 // func runChat() {
 // 	cfg := loadConfig()
 
-// 	fmt.Println("Starting PRism chat session. Type 'exit' or 'quit' to end the session.")
-// 	fmt.Printf("Connected to repository: %s/%s\n", cfg.RepoOwner, cfg.RepoName)
+// 	log.Println("Starting PRism chat session. Type 'exit' or 'quit' to end the session.")
+// 	log.Printf("Connected to repository: %s/%s\n", cfg.RepoOwner, cfg.RepoName)
 
 // 	// Initialize context
 // 	ctx := context.Background()
@@ -37,7 +37,7 @@ func init() {
 // 	if cfg.PRNumber > 0 {
 // 		prDetails, err := github.FetchPRDetails(githubClient, cfg)
 // 		if err != nil {
-// 			fmt.Printf("Warning: Could not fetch PR details: %v\n", err)
+// 			log.Printf("Warning: Could not fetch PR details: %v\n", err)
 // 		} else {
 // 			prContext = fmt.Sprintf("PR #%d: %s\n%s\n",
 // 				cfg.PRNumber,
@@ -62,7 +62,7 @@ func init() {
 // 		input = strings.TrimSpace(input)
 
 // 		if input == "exit" || input == "quit" {
-// 			fmt.Println("Exiting chat session. Goodbye!")
+// 			log.Println("Exiting chat session. Goodbye!")
 // 			break
 // 		}
 
@@ -75,11 +75,11 @@ func init() {
 // 		// Call Claude API with conversation
 // 		response, err := llm.SimpleClaudeChat(prompt, cfg)
 // 		if err != nil {
-// 			fmt.Printf("Error: %v\n", err)
+// 			log.Printf("Error: %v\n", err)
 // 			continue
 // 		}
 
-// 		fmt.Println("\nPRism: " + response)
+// 		log.Println("\nPRism: " + response)
 
 // 		// Add assistant response to conversation
 // 		conversation = append(conversation, "Assistant: "+response)

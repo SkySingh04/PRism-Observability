@@ -2,7 +2,8 @@
 package cmd
 
 import (
-	"fmt"
+	"PRism/config"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -26,11 +27,11 @@ func init() {
 }
 
 func runAlerts() {
-	cfg := loadConfig()
+	cfg := config.LoadConfig()
 
 	// For now, this is a placeholder implementation
-	fmt.Println("Alerts functionality will be implemented here")
-	fmt.Printf("Current repository: %s/%s\n", cfg.RepoOwner, cfg.RepoName)
+	log.Println("Alerts functionality will be implemented here")
+	log.Printf("Current repository: %s/%s\n", cfg.RepoOwner, cfg.RepoName)
 
 	// In a real implementation, you would:
 	// 1. Fetch configured alerts from a database or config file

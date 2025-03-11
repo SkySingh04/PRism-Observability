@@ -175,8 +175,8 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSug
 	}
 
 	summary, err := utils.ParseLLMSummary(responseText)
-	// fmt.Println("Summary:")
-	// fmt.Println(summary)
+	// log.Println("Summary:")
+	// log.Println(summary)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing summary: %v", err), responseText, ""
 	}
