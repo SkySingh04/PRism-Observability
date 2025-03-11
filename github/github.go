@@ -95,7 +95,7 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	return result, nil
 }
 
-func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config) error {
+func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config, summarry string) error {
 	// Get PR details
 	prNumber := configStruct.PRNumber
 	owner := configStruct.RepoOwner
@@ -121,6 +121,39 @@ func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]
 	headSHA := pr.GetHead().GetSHA()
 	if headSHA == "" {
 		return fmt.Errorf("could not get HEAD SHA from PR")
+	}
+
+	// Post summary comment
+	if summarry != "" {
+		summaryPayload := map[string]interface{}{
+			"body": summarry,
+		}
+
+		summaryJSON, err := json.Marshal(summaryPayload)
+		if err != nil {
+			return fmt.Errorf("error marshaling summary payload: %v", err)
+		}
+
+		url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d/comments", owner, repo, prNumber)
+		req, err := http.NewRequest("POST", url, bytes.NewBuffer(summaryJSON))
+		if err != nil {
+			return fmt.Errorf("error creating HTTP request for summary: %v", err)
+		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("token %s", configStruct.GithubToken))
+		req.Header.Set("Content-Type", "application/json")
+
+		httpClient := &http.Client{}
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return fmt.Errorf("error posting summary comment: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			bodyBytes, _ := ioutil.ReadAll(resp.Body)
+			return fmt.Errorf("GitHub API error (%d) for summary: %s", resp.StatusCode, string(bodyBytes))
+		}
 	}
 
 	// For each suggestion, create a review comment

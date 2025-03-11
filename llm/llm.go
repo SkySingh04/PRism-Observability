@@ -76,6 +76,8 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 	b.WriteString("   - System events\n")
 	b.WriteString("   - Performance metrics\n\n")
 
+	b.WriteString("IMPORTANT : Also, provide a summary paragraph of all the suggested changes starting with SUMMARY:, along with the reason for each change and sort them by priority (High, Medium, Low).\n\n")
+
 	b.WriteString("Format each suggestion as follows:\n")
 	b.WriteString("```\n")
 	b.WriteString("FILE: filename.go\n")
@@ -92,7 +94,7 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 	return b.String()
 }
 
-func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSuggestion, error, string) {
+func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSuggestion, error, string, string) {
 	// Prepare Claude request
 	claudeReq := config.ClaudeRequest{
 		Model:       configStruct.ClaudeModel,
@@ -109,13 +111,13 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSug
 
 	reqBody, err := json.Marshal(claudeReq)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling Claude request: %v", err), ""
+		return nil, fmt.Errorf("error marshaling Claude request: %v", err), "", ""
 	}
 
 	// Create HTTP request
 	req, err := http.NewRequest("POST", configStruct.ClaudeBaseURL, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %v", err), ""
+		return nil, fmt.Errorf("error creating HTTP request: %v", err), "", ""
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -126,24 +128,24 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSug
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error executing HTTP request: %v", err), ""
+		return nil, fmt.Errorf("error executing HTTP request: %v", err), "", ""
 	}
 	defer resp.Body.Close()
 
 	// Read response
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response body: %v", err), ""
+		return nil, fmt.Errorf("error reading response body: %v", err), "", ""
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error from Claude API: %s", string(body)), ""
+		return nil, fmt.Errorf("error from Claude API: %s", string(body)), "", ""
 	}
 
 	// Parse Claude response
 	var claudeResp config.ClaudeResponse
 	if err := json.Unmarshal(body, &claudeResp); err != nil {
-		return nil, fmt.Errorf("error parsing Claude response: %v", err), ""
+		return nil, fmt.Errorf("error parsing Claude response: %v", err), "", ""
 	}
 
 	// Extract text from the array of content
@@ -163,28 +165,13 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSug
 	// Parse suggestions for PR comments
 	suggestions, err := utils.ParseLLMSuggestions(responseText)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText
+		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText, ""
 	}
 
-	// // Extract JSON from Claude's response for structured recommendations
-	// jsonStr := utils.ExtractJSONFromText(responseText)
-	// if jsonStr == "" {
-	// 	// If no JSON found but we have suggestions, continue without structured recommendations
-	// 	if len(suggestions) > 0 {
-	// 		return &config.ObservabilityRecommendation{}, nil, responseText
-	// 	}
-	// 	return nil, fmt.Errorf("no JSON or suggestions found in Claude's response"), responseText
-	// }
+	summary, err := utils.ParseLLMSummary(responseText)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing summary: %v", err), responseText, ""
+	}
 
-	// // Parse the recommendations
-	// var recommendations config.ObservabilityRecommendation
-	// if err := json.Unmarshal([]byte(jsonStr), &recommendations); err != nil {
-	// 	// If JSON parsing fails but we have suggestions, continue without structured recommendations
-	// 	if len(suggestions) > 0 {
-	// 		return &config.ObservabilityRecommendation{}, nil, responseText
-	// 	}
-	// 	return nil, fmt.Errorf("error parsing recommendations: %v", err), responseText
-	// }
-
-	return &suggestions, nil, responseText
+	return &suggestions, nil, responseText, summary
 }

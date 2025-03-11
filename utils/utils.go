@@ -52,6 +52,18 @@ func ParseLLMSuggestions(llmResponse string) ([]config.FileSuggestion, error) {
 	return suggestions, nil
 }
 
+func ParseLLMSummary(llmResponse string) (string, error) {
+	// Find the summary block
+	summaryPattern := regexp.MustCompile(`SUMMARY:\n *`)
+	matches := summaryPattern.FindStringSubmatch(llmResponse)
+
+	if len(matches) != 2 {
+		return "", nil
+	}
+
+	return extractActualContent(matches[1]), nil
+}
+
 // extractActualContent extracts the content from diff format
 func extractActualContent(diff string) string {
 	var result strings.Builder
