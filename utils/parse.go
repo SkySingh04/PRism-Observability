@@ -2,6 +2,7 @@ package utils
 
 import (
 	"PRism/config"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -87,19 +88,20 @@ func ParseLLMSuggestionsForDashboards(llmResponse string) ([]config.DashboardSug
 }
 
 func ParseLLMSummary(llmResponse string) (string, error) {
-	// Correct pattern to capture content after "SUMMARY:"
-	summaryPattern := regexp.MustCompile(`(?s)SUMMARY:\s*(.+?)\n\n|SUMMARY:\s*(.+)$`)
+	// Match everything from "SUMMARY:" to either the next section marker or end of text
+	summaryPattern := regexp.MustCompile(`(?s)SUMMARY:\s*(.*?)(?:\n\n##|\n\nFILE:|$)`)
 
 	matches := summaryPattern.FindStringSubmatch(llmResponse)
 	if len(matches) < 2 {
-		return "", nil
+		// Try a more permissive pattern as fallback
+		summaryPattern = regexp.MustCompile(`(?s)SUMMARY:\s*(.+)$`)
+		matches = summaryPattern.FindStringSubmatch(llmResponse)
+
+		if len(matches) < 2 {
+			return "", fmt.Errorf("could not extract summary from response")
+		}
 	}
 
-	// Capture group may vary depending on the match pattern
-	content := strings.TrimSpace(matches[1])
-	if content == "" && len(matches) > 2 {
-		content = strings.TrimSpace(matches[2])
-	}
-
-	return content, nil
+	// Return the captured content and trim any trailing whitespace
+	return strings.TrimSpace(matches[1]), nil
 }

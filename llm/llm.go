@@ -273,6 +273,9 @@ func CallClaudeAPIForObservability(prompt string, configStruct config.Config) (*
 		return nil, fmt.Errorf("error from Claude API: %s", string(body)), "", ""
 	}
 
+	// log.Printf("Response from Claude API: %s", string(body))
+	// fmt.Printf("Response from Claude API: %s", string(body))
+
 	// Parse Claude response
 	var claudeResp config.ClaudeResponse
 	if err := json.Unmarshal(body, &claudeResp); err != nil {
@@ -355,6 +358,8 @@ func CallClaudeAPIForDashboards(prompt string, configStruct config.Config) (*[]c
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("error from Claude API: %s", string(body)), "", ""
 	}
+	// log.Printf("Response from Claude API: %s", string(body))
+	// fmt.Printf("Response from Claude API: %s", string(body))
 
 	// Parse Claude response
 	var claudeResp config.ClaudeResponse
