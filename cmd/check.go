@@ -69,9 +69,9 @@ func runCheck() {
 		// log.Println(suggestions)
 
 		// Create PR comments if suggestions exist
-		err := github.CreatePRComments(*suggestions, prDetails, cfg, summary)
+		err := github.CreateObservabilityPRComments(*suggestions, prDetails, cfg, summary)
 		if err != nil {
-			log.Fatalf("Error creating PR comments: %v", err)
+			log.Fatalf("Error creating Observability PR comments: %v", err)
 		}
 	}
 }

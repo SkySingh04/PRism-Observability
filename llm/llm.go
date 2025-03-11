@@ -100,6 +100,10 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 	return b.String()
 }
 
+func BuildDashboardPrompt(prDetails map[string]interface{}, prdContent string) string {
+	return ""
+}
+
 func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSuggestion, error, string, string) {
 	// Prepare Claude request
 	claudeReq := config.ClaudeRequest{

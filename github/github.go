@@ -133,7 +133,7 @@ func PostSummaryComment(owner, repo string, prNumber int, summary, token string)
 }
 
 // CreatePRComments handles inline comments and summary posting
-func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
+func CreateObservabilityPRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
 	ctx := context.Background()
 	client := github.NewClient(nil)
 
@@ -203,4 +203,9 @@ func CreatePRComments(suggestions []config.FileSuggestion, prDetails map[string]
 	}
 
 	return nil
+}
+
+func CreateDashboardPRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
+	return nil
+
 }
