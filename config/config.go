@@ -36,16 +36,20 @@ func LoadConfig() Config {
 
 // Config holds configuration for the application
 type Config struct {
-	GithubToken   string
-	ClaudeAPIKey  string
-	RepoOwner     string
-	RepoName      string
-	PRNumber      int
-	PRDFilePath   string
-	OutputFormat  string
-	MaxDiffSize   int
-	ClaudeModel   string
-	ClaudeBaseURL string
+	GithubToken        string
+	ClaudeAPIKey       string
+	RepoOwner          string
+	RepoName           string
+	PRNumber           int
+	PRDFilePath        string
+	OutputFormat       string
+	MaxDiffSize        int
+	ClaudeModel        string
+	ClaudeBaseURL      string
+	GrafanaAPIToken    string
+	GrafanaURL         string
+	AmplitudeAPIKey    string
+	AmplitudeSecretKey string
 }
 
 // ObservabilityRecommendation represents the recommendations from Claude
@@ -115,4 +119,14 @@ type FileSuggestion struct {
 	FileName string
 	LineNum  string
 	Content  string
+}
+
+// Example DashboardSuggestion struct for the config package
+type DashboardSuggestion struct {
+	Name     string
+	Type     string
+	Priority string
+	Queries  string
+	Panels   string
+	Alerts   string
 }

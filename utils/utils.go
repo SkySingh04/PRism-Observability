@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"PRism/config"
 	"os"
 	"regexp"
 	"strings"
@@ -16,62 +15,8 @@ func GetEnv(key, fallback string) string {
 	return value
 }
 
-// ParseLLMSuggestions extracts file-based suggestions from Claude's response
-func ParseLLMSuggestions(llmResponse string) ([]config.FileSuggestion, error) {
-	suggestions := []config.FileSuggestion{}
-
-	// Check if response is LGTM
-	if strings.Contains(llmResponse, "LGTM") {
-		return suggestions, nil // Return empty suggestions for LGTM case
-	}
-
-	// Find all suggestion blocks
-	suggestionPattern := regexp.MustCompile(`FILE: (.+?)\nLINE: (\d+)\nSUGGESTION:\n` +
-		"```diff\n" + `((?s:.+?))` + "```")
-	matches := suggestionPattern.FindAllStringSubmatch(llmResponse, -1)
-
-	for _, match := range matches {
-		if len(match) != 4 {
-			continue
-		}
-
-		fileName := match[1]
-		lineNum := match[2]
-		diffContent := match[3]
-
-		// Parse the diff content to get actual change
-		suggestion := config.FileSuggestion{
-			FileName: fileName,
-			LineNum:  lineNum,
-			Content:  extractActualContent(diffContent),
-		}
-
-		suggestions = append(suggestions, suggestion)
-	}
-
-	return suggestions, nil
-}
-
-func ParseLLMSummary(llmResponse string) (string, error) {
-	// Correct pattern to capture content after "SUMMARY:"
-	summaryPattern := regexp.MustCompile(`(?s)SUMMARY:\s*(.+?)\n\n|SUMMARY:\s*(.+)$`)
-
-	matches := summaryPattern.FindStringSubmatch(llmResponse)
-	if len(matches) < 2 {
-		return "", nil
-	}
-
-	// Capture group may vary depending on the match pattern
-	content := strings.TrimSpace(matches[1])
-	if content == "" && len(matches) > 2 {
-		content = strings.TrimSpace(matches[2])
-	}
-
-	return content, nil
-}
-
 // extractActualContent extracts the content from diff format
-func extractActualContent(diff string) string {
+func ExtractActualContent(diff string) string {
 	var result strings.Builder
 
 	// Process each line
@@ -116,4 +61,50 @@ func ExtractJSONFromText(text string) string {
 	}
 
 	return ""
+}
+
+// Helper function to convert Grafana panel types to Amplitude chart types
+func ConvertPanelType(panelType string) string {
+	switch panelType {
+	case "timeseries":
+		return "line"
+	case "bar":
+		return "bar"
+	case "table":
+		return "table"
+	case "stat":
+		return "number"
+	case "pie":
+		return "pie"
+	default:
+		return "line"
+	}
+}
+
+// Helper function to convert Grafana queries to Amplitude format
+func ConvertToAmplitudeQuery(query map[string]interface{}) map[string]interface{} {
+	// This is a simplified conversion - in a real implementation,
+	// you would need more sophisticated conversion logic
+	amplitudeQuery := map[string]interface{}{
+		"event_type": "custom",
+	}
+
+	// Extract event name from the Grafana query
+	if expr, ok := query["expr"].(string); ok {
+		// Extract event name from Prometheus-style query
+		// This is just a simple extraction and would need to be more robust
+		regexEvent := regexp.MustCompile(`\{([^}]+)\}`)
+		if matches := regexEvent.FindStringSubmatch(expr); len(matches) > 1 {
+			parts := strings.Split(matches[1], ",")
+			for _, part := range parts {
+				kv := strings.Split(part, "=")
+				if len(kv) == 2 && strings.TrimSpace(kv[0]) == "event_name" {
+					amplitudeQuery["event_type"] = strings.Trim(kv[1], "\"'")
+					break
+				}
+			}
+		}
+	}
+
+	return amplitudeQuery
 }

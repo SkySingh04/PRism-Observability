@@ -55,7 +55,7 @@ func runCheck() {
 	prompt := llm.BuildObservabilityPrompt(prDetails, prdContent)
 
 	// Call Claude API
-	suggestions, err, _, summary := llm.CallClaudeAPI(prompt, cfg)
+	suggestions, err, _, summary := llm.CallClaudeAPIForObservability(prompt, cfg)
 	if err != nil {
 		log.Fatalf("Error calling Claude API: %v", err)
 	}

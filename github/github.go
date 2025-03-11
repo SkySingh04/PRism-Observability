@@ -205,7 +205,48 @@ func CreateObservabilityPRComments(suggestions []config.FileSuggestion, prDetail
 	return nil
 }
 
-func CreateDashboardPRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
-	return nil
+func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
+	ctx := context.Background()
+	client := github.NewClient(nil)
 
+	if configStruct.GithubToken != "" {
+		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: configStruct.GithubToken})
+		tc := oauth2.NewClient(ctx, ts)
+		client = github.NewClient(tc)
+	}
+
+	// Post the summary comment first
+	if err := PostSummaryComment(configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, summary, configStruct.GithubToken); err != nil {
+		return err
+	}
+
+	// Create a detailed comment for each dashboard suggestion
+	for _, suggestion := range suggestions {
+		// Format a readable dashboard suggestion comment
+		commentBody := fmt.Sprintf("## Dashboard Suggestion: %s\n\n", suggestion.Name)
+		commentBody += fmt.Sprintf("**Type:** %s\n", suggestion.Type)
+		commentBody += fmt.Sprintf("**Priority:** %s\n\n", suggestion.Priority)
+
+		commentBody += "### Queries\n```json\n" + suggestion.Queries + "\n```\n\n"
+		commentBody += "### Panels\n```json\n" + suggestion.Panels + "\n```\n\n"
+		commentBody += "### Alerts\n```json\n" + suggestion.Alerts + "\n```\n\n"
+
+		// Add action buttons - these will be parsed by the GitHub action
+		commentBody += "<details>\n"
+		commentBody += "<summary>Click to create this dashboard</summary>\n\n"
+		commentBody += fmt.Sprintf("<!-- DASHBOARD_CREATE:%s:%s -->\n", suggestion.Type, suggestion.Name)
+		commentBody += "</details>\n"
+
+		// Post the comment
+		issueComment := &github.IssueComment{
+			Body: github.String(commentBody),
+		}
+
+		_, _, err := client.Issues.CreateComment(ctx, configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, issueComment)
+		if err != nil {
+			return fmt.Errorf("error posting dashboard comment: %v", err)
+		}
+	}
+
+	return nil
 }
