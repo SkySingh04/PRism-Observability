@@ -136,3 +136,12 @@ type DashboardSuggestion struct {
 	Panels   string
 	Alerts   string
 }
+
+type AlertSuggestion struct {
+	Name     string
+	Type     string
+	Priority string
+	Queries  string
+	Panels   string
+	Alerts   string
+}

@@ -250,3 +250,7 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 
 	return nil
 }
+
+func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
+	return nil
+}

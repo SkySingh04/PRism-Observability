@@ -87,6 +87,49 @@ func ParseLLMSuggestionsForDashboards(llmResponse string) ([]config.DashboardSug
 	return suggestions, nil
 }
 
+func ParseLLMSuggestionsForAlerts(llmResponse string) ([]config.AlertSuggestion, error) {
+	suggestions := []config.AlertSuggestion{}
+
+	// Check if response is LGTM
+	if strings.Contains(llmResponse, "LGTM") {
+		return suggestions, nil
+	}
+
+	// Find all alert suggestion blocks
+	alertPattern := regexp.MustCompile(`ALERT: (.+?)\nTYPE: (.+?)\nPRIORITY: (.+?)\nQUERIES:\n` +
+		"```json\n" + `((?s:.+?))` + "```\n" +
+		`PANELS:\n` + "```json\n" + `((?s:.+?))` + "```\n" +
+		`ALERTS:\n` + "```json\n" + `((?s:.+?))` + "```")
+
+	matches := alertPattern.FindAllStringSubmatch(llmResponse, -1)
+
+	for _, match := range matches {
+		if len(match) != 7 {
+			continue
+		}
+
+		name := match[1]
+		alertType := match[2]
+		priority := match[3]
+		queries := match[4]
+		panels := match[5]
+		alerts := match[6]
+
+		suggestion := config.AlertSuggestion{
+			Name:     name,
+			Type:     alertType,
+			Priority: priority,
+			Queries:  queries,
+			Panels:   panels,
+			Alerts:   alerts,
+		}
+
+		suggestions = append(suggestions, suggestion)
+	}
+
+	return suggestions, nil
+}
+
 func ParseLLMSummary(llmResponse string) (string, error) {
 	// Match everything from "SUMMARY:" to either the next section marker or end of text
 	summaryPattern := regexp.MustCompile(`(?s)SUMMARY:\s*(.*?)(?:\n\n##|\n\nFILE:|$)`)

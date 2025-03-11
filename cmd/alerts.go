@@ -3,6 +3,10 @@ package cmd
 
 import (
 	"PRism/config"
+	"PRism/github"
+	"PRism/llm"
+	"context"
+	"io/ioutil"
 	"log"
 
 	"github.com/spf13/cobra"
@@ -29,12 +33,48 @@ func init() {
 func runAlerts() {
 	cfg := config.LoadConfig()
 
-	// For now, this is a placeholder implementation
-	log.Println("Alerts functionality will be implemented here")
-	log.Printf("Current repository: %s/%s\n", cfg.RepoOwner, cfg.RepoName)
+	// Initialize GitHub client
+	ctx := context.Background()
+	githubClient := github.InitializeGithubClient(cfg, ctx)
 
-	// In a real implementation, you would:
-	// 1. Fetch configured alerts from a database or config file
-	// 2. Check the repository against these alerts
-	// 3. Display any triggered alerts
+	// Fetch PR details including diff
+	prDetails, err := github.FetchPRDetails(githubClient, cfg)
+	if err != nil {
+		log.Fatalf("Error fetching PR details: %v", err)
+	}
+
+	// Read PRD content if provided
+	prdContent := ""
+	if cfg.PRDFilePath != "" {
+		content, err := ioutil.ReadFile(cfg.PRDFilePath)
+		if err != nil {
+			log.Printf("Warning: Could not read PRD file: %v", err)
+		} else {
+			prdContent = string(content)
+		}
+	}
+
+	// Prepare prompt for Claude
+	prompt := llm.BuildAlertsPrompt(prDetails, prdContent)
+
+	// Call Claude API
+	suggestions, err, _, summary := llm.CallClaudeAPIForAlerts(prompt, cfg)
+	if err != nil {
+		log.Fatalf("Error calling Claude API: %v", err)
+	}
+
+	if suggestions == nil {
+		log.Println("No suggestions found")
+		// log.Println("Response text:")
+		// log.Println(responseText)
+	} else {
+		log.Println("Suggestions found!")
+		// log.Println(suggestions)
+
+		// Create PR comments if suggestions exist
+		err := github.CreateAlertsPRComments(*suggestions, prDetails, cfg, summary)
+		if err != nil {
+			log.Fatalf("Error creating Alerts PR comments: %v", err)
+		}
+	}
 }
