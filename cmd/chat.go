@@ -2,6 +2,16 @@
 package cmd
 
 import (
+	"PRism/config"
+	"PRism/github"
+	"PRism/llm"
+	"bufio"
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"strings"
+
 	"github.com/spf13/cobra"
 )
 
@@ -11,7 +21,7 @@ var chatCmd = &cobra.Command{
 	Long: `Start an interactive chat session with Claude AI about your repository.
 You can ask questions about code, PRs, best practices, and more.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// runChat()
+		runChat()
 	},
 }
 
@@ -22,71 +32,63 @@ func init() {
 	chatCmd.Flags().Int("pr-context", 0, "Specific PR to use as context (defaults to current PR if set)")
 }
 
-// func runChat() {
-// 	cfg := loadConfig()
+func runChat() {
+	cfg := config.LoadConfig()
 
-// 	log.Println("Starting PRism chat session. Type 'exit' or 'quit' to end the session.")
-// 	log.Printf("Connected to repository: %s/%s\n", cfg.RepoOwner, cfg.RepoName)
+	log.Println("Starting PRism chat session. Type 'exit' or 'quit' to end the session.")
+	log.Printf("Connected to repository: %s/%s\n", cfg.RepoOwner, cfg.RepoName)
 
-// 	// Initialize context
-// 	ctx := context.Background()
-// 	githubClient := github.InitializeGithubClient(cfg, ctx)
+	// Initialize context
+	ctx := context.Background()
+	githubClient := github.InitializeGithubClient(cfg, ctx)
 
-// 	// Get PR details if available for context
-// 	var prContext string
-// 	if cfg.PRNumber > 0 {
-// 		prDetails, err := github.FetchPRDetails(githubClient, cfg)
-// 		if err != nil {
-// 			log.Printf("Warning: Could not fetch PR details: %v\n", err)
-// 		} else {
-// 			prContext = fmt.Sprintf("PR #%d: %s\n%s\n",
-// 				cfg.PRNumber,
-// 				prDetails.Title,
-// 				prDetails.Diff)
-// 		}
-// 	}
+	// Fetch PR details including diff
+	prDetails, err := github.FetchPRDetails(githubClient, cfg)
+	if err != nil {
+		log.Fatalf("Error fetching PR details: %v", err)
+	}
 
-// 	// Start chat loop
-// 	reader := bufio.NewReader(os.Stdin)
-// 	conversation := []string{}
+	// Start chat loop
+	reader := bufio.NewReader(os.Stdin)
+	conversation := []string{}
 
-// 	if prContext != "" {
-// 		conversation = append(conversation,
-// 			"System: The following is context about a GitHub PR being discussed:",
-// 			prContext)
-// 	}
+	if prDetails != nil {
+		conversation = append(conversation,
+			"System: The following is context about a GitHub PR being discussed:",
+			fmt.Sprintf("%+v", prDetails))
+	}
 
-// 	for {
-// 		fmt.Print("\nYou: ")
-// 		input, _ := reader.ReadString('\n')
-// 		input = strings.TrimSpace(input)
+	for {
+		fmt.Print("\nYou: ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
 
-// 		if input == "exit" || input == "quit" {
-// 			log.Println("Exiting chat session. Goodbye!")
-// 			break
-// 		}
+		if input == "exit" || input == "quit" {
+			log.Println("Exiting chat session. Goodbye!")
+			break
+		}
 
-// 		// Add user message to conversation
-// 		conversation = append(conversation, "User: "+input)
+		// Add user message to conversation
+		conversation = append(conversation, "User: "+input)
 
-// 		// Build complete prompt with conversation history
-// 		prompt := strings.Join(conversation, "\n")
+		// Build complete prompt with conversation history
+		prompt := strings.Join(conversation, "\n")
 
-// 		// Call Claude API with conversation
-// 		response, err := llm.SimpleClaudeChat(prompt, cfg)
-// 		if err != nil {
-// 			log.Printf("Error: %v\n", err)
-// 			continue
-// 		}
+		// Call Claude API with conversation
+		response, err := llm.SimpleClaudeChat(prompt, cfg)
+		if err != nil {
+			log.Printf("Error: %v\n", err)
+			continue
+		}
 
-// 		log.Println("\nPRism: " + response)
+		log.Println("\nPRism: " + response)
 
-// 		// Add assistant response to conversation
-// 		conversation = append(conversation, "Assistant: "+response)
+		// Add assistant response to conversation
+		conversation = append(conversation, "Assistant: "+response)
 
-// 		// Limit conversation history if it gets too long
-// 		if len(conversation) > 20 {
-// 			conversation = conversation[len(conversation)-20:]
-// 		}
-// 	}
-// }
+		// Limit conversation history if it gets too long
+		if len(conversation) > 20 {
+			conversation = conversation[len(conversation)-20:]
+		}
+	}
+}

@@ -6,8 +6,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 func CallClaudeAPIForObservability(prompt string, configStruct config.Config) (*[]config.FileSuggestion, error, string, string) {
@@ -265,4 +267,72 @@ func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]confi
 	// }
 
 	return &suggestions, nil, responseText
+}
+
+// SimpleClaudeChat sends the prompt to Claude API and returns the response
+func SimpleClaudeChat(prompt string, cfg config.Config) (string, error) {
+	// Prepare request body
+	requestBody := map[string]interface{}{
+		"model":       "claude-3-7-sonnet-20250219",
+		"max_tokens":  1024,
+		"temperature": 0.7,
+		"messages": []map[string]string{
+			{
+				"role":    "user",
+				"content": prompt,
+			},
+		},
+	}
+
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling request: %v", err)
+	}
+
+	// Create request
+	req, err := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", cfg.ClaudeAPIKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
+
+	// Send request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error sending request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Handle error responses
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	// Parse response
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("error decoding response: %v", err)
+	}
+
+	// Extract content
+	content := ""
+	if messages, ok := result["content"].([]interface{}); ok && len(messages) > 0 {
+		if message, ok := messages[0].(map[string]interface{}); ok {
+			if text, ok := message["text"].(string); ok {
+				content = strings.TrimSpace(text)
+			}
+		}
+	}
+
+	if content == "" {
+		return "", fmt.Errorf("could not extract content from response")
+	}
+
+	return content, nil
 }
