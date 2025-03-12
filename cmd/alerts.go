@@ -61,8 +61,7 @@ func runAlerts() {
 	prompt := llm.BuildAlertsPrompt(prDetails, prdContent)
 
 	// Call Claude API
-	suggestions, err, responseText, summary := llm.CallClaudeAPIForAlerts(prompt, cfg)
-	log.Printf("Summary: %s", summary)
+	suggestions, err, responseText := llm.CallClaudeAPIForAlerts(prompt, cfg)
 	if err != nil {
 		log.Fatalf("Error calling Claude API: %v", err)
 	}
@@ -80,7 +79,7 @@ func runAlerts() {
 		}
 
 		// Create PR comments if suggestions exist
-		err := github.CreateAlertsPRComments(*suggestions, prDetails, cfg, summary)
+		err := github.CreateAlertsPRComments(*suggestions, prDetails, cfg)
 		if err != nil {
 			log.Fatalf("Error creating Alerts PR comments: %v", err)
 		}

@@ -72,6 +72,10 @@ func init() {
 	viper.BindPFlag("grafana_service_account_token", rootCmd.PersistentFlags().Lookup("grafana_service_account_token"))
 	viper.BindPFlag("grafana_url", rootCmd.PersistentFlags().Lookup("grafana_url"))
 	viper.BindPFlag("amplitude_api_token", rootCmd.PersistentFlags().Lookup("amplitude_api_token"))
+	viper.BindPFlag("prometheus_alertmanager_url", rootCmd.PersistentFlags().Lookup("prometheus_alertmanager_url"))
+	viper.BindPFlag("prometheus_auth_token", rootCmd.PersistentFlags().Lookup("prometheus_auth_token"))
+	viper.BindPFlag("datadog_api_key", rootCmd.PersistentFlags().Lookup("datadog_api_key"))
+	viper.BindPFlag("datadog_app_key", rootCmd.PersistentFlags().Lookup("datadog_app_key"))
 
 	// Bind env variables
 	viper.BindEnv("github_token", "GITHUB_TOKEN")
@@ -89,6 +93,10 @@ func init() {
 	viper.BindEnv("grafana_service_account_token", "GRAFANA_SERVICE_ACCOUNT_TOKEN")
 	viper.BindEnv("grafana_url", "GRAFANA_URL")
 	viper.BindEnv("amplitude_api_token", "AMPLITUDE_API_TOKEN")
+	viper.BindEnv("prometheus_alertmanager_url", "PROMETHEUS_ALERTMANAGER_URL")
+	viper.BindEnv("prometheus_auth_token", "PROMETHEUS_AUTH_TOKEN")
+	viper.BindEnv("datadog_api_key", "DATADOG_API_KEY")
+	viper.BindEnv("datadog_app_key", "DATADOG_APP_KEY")
 }
 
 // initConfig reads in config file and ENV variables if set

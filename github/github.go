@@ -251,7 +251,7 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 	return nil
 }
 
-func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
+func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[string]interface{}, configStruct config.Config) error {
 	ctx := context.Background()
 	client := github.NewClient(nil)
 
@@ -261,10 +261,10 @@ func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[
 		client = github.NewClient(tc)
 	}
 
-	// Post the summary comment first
-	if err := PostSummaryComment(configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, summary, configStruct.GithubToken); err != nil {
-		return err
-	}
+	// // Post the summary comment first
+	// if err := PostSummaryComment(configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, summary, configStruct.GithubToken); err != nil {
+	// 	return err
+	// }
 
 	// Create a detailed comment for each alert suggestion
 	for _, suggestion := range suggestions {

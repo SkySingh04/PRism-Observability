@@ -23,6 +23,10 @@ func LoadConfig() Config {
 		AmplitudeAPIToken:          viper.GetString("amplitude_api_token"),
 		GrafanaServiceAccountToken: viper.GetString("grafana_service_account_token"),
 		GrafanaURL:                 viper.GetString("grafana_url"),
+		PrometheusAlertmanagerURL:  viper.GetString("prometheus_alertmanager_url"),
+		PrometheusAuthToken:        viper.GetString("prometheus_auth_token"),
+		DatadogAPIKey:              viper.GetString("datadog_api_key"),
+		DatadogAppKey:              viper.GetString("datadog_app_key"),
 	}
 
 	// Validate required parameters

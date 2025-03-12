@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -181,7 +182,7 @@ func CallClaudeAPIForDashboards(prompt string, configStruct config.Config) (*[]c
 
 	return &suggestions, nil, responseText, summary
 }
-func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]config.AlertSuggestion, error, string, string) {
+func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]config.AlertSuggestion, error, string) {
 	// Prepare Claude request
 	claudeReq := config.ClaudeRequest{
 		Model:       configStruct.ClaudeModel,
@@ -198,13 +199,13 @@ func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]confi
 
 	reqBody, err := json.Marshal(claudeReq)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling Claude request: %v", err), "", ""
+		return nil, fmt.Errorf("error marshaling Claude request: %v", err), ""
 	}
 
 	// Create HTTP request
 	req, err := http.NewRequest("POST", configStruct.ClaudeBaseURL, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("error creating HTTP request: %v", err), "", ""
+		return nil, fmt.Errorf("error creating HTTP request: %v", err), ""
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -215,18 +216,18 @@ func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]confi
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error executing HTTP request: %v", err), "", ""
+		return nil, fmt.Errorf("error executing HTTP request: %v", err), ""
 	}
 	defer resp.Body.Close()
 
 	// Read response
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response body: %v", err), "", ""
+		return nil, fmt.Errorf("error reading response body: %v", err), ""
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error from Claude API: %s", string(body)), "", ""
+		return nil, fmt.Errorf("error from Claude API: %s", string(body)), ""
 	}
 	// log.Printf("Response from Claude API: %s", string(body))
 	// fmt.Printf("Response from Claude API: %s", string(body))
@@ -234,7 +235,7 @@ func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]confi
 	// Parse Claude response
 	var claudeResp config.ClaudeResponse
 	if err := json.Unmarshal(body, &claudeResp); err != nil {
-		return nil, fmt.Errorf("error parsing Claude response: %v", err), "", ""
+		return nil, fmt.Errorf("error parsing Claude response: %v", err), ""
 	}
 
 	// Extract text from the array of content
@@ -250,19 +251,19 @@ func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]confi
 	// 	// Return empty recommendations for LGTM case
 	// 	return &config.ObservabilityRecommendation{}, nil, responseText
 	// }
-
+	log.Println(responseText)
 	// Parse suggestions for PR comments
 	suggestions, err := utils.ParseLLMSuggestionsForAlerts(responseText)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText, ""
+		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText
 	}
 
-	summary, err := utils.ParseLLMSummary(responseText)
-	// log.Println("Summary:")
-	// log.Println(summary)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing summary: %v", err), responseText, ""
-	}
+	// summary, err := utils.ParseLLMSummary(responseText)
+	// // log.Println("Summary:")
+	// // log.Println(summary)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error parsing summary: %v", err), responseText, ""
+	// }
 
-	return &suggestions, nil, responseText, summary
+	return &suggestions, nil, responseText
 }
