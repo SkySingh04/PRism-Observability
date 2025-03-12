@@ -1,4 +1,3 @@
-```markdown
 # PRism - PR Observability and Analysis Tool
 
 PRism is an AI-powered tool that analyzes GitHub pull requests using Claude AI to provide observability recommendations, create dashboards, and manage alerts. It helps improve code quality and observability standards in your projects.
@@ -9,6 +8,9 @@ PRism is an AI-powered tool that analyzes GitHub pull requests using Claude AI t
 .
 ├── .env                # Environment variables configuration
 ├── .gitignore          # Git ignore file
+├── alerts/             # Alert configuration and rules
+│   ├── prometheus.yml  # Prometheus configuration
+│   └── prometheus/     # Prometheus alert rules directory
 ├── cmd/                # Command-line interface commands
 │   ├── alerts.go       # Manages PR alerts
 │   ├── chat.go         # Interactive chat functionality
@@ -75,30 +77,25 @@ PRism is an AI-powered tool that analyzes GitHub pull requests using Claude AI t
 ### Generate Dashboards from PR Analysis
 
 ```bash
-./prism dashboard --repo-owner=<owner> --repo-name=<repo> --pr-number=<number>
+./prism dashboard --repo-owner=<owner> --repo-name=<repo> --pr-number=<number> --dashboard-type=<grafana|amplitude>
 ```
 
 ### Manage PR Alerts
 
 ```bash
-./prism alerts --repo-owner=<owner> --repo-name=<repo> --pr-number=<number>
+./prism alerts --repo-owner=<owner> --repo-name=<repo> --pr-number=<number> --alert-type=<missing-logs|missing-metrics>
+```
+
+### Interactive Chat Mode
+
+```bash
+./prism chat --repo-owner=<owner> --repo-name=<repo> --pr-number=<number>
 ```
 
 ## Configuration
 
 PRism can be configured using environment variables, command-line flags, or a config file.
 
-### To run Prometheus (For testing)
-
-```
-docker run --rm --detach \
-  --name my-prometheus \
-  --publish 9090:9090 \
-  --volume prometheus-volume:/prometheus \
-  --volume "$(pwd)"/alerts/prometheus.yml:/etc/prometheus/prometheus.yml \
-  --volume "$(pwd)"/alerts/prometheus/rules:/etc/prometheus/rules \
-  prom/prometheus                       
-  ```
 ### Environment Variables
 
 Create a `.env` file with the following variables:
@@ -141,6 +138,18 @@ All environment variables can also be set via command-line flags:
   --output=markdown
 ```
 
+### Setting Up Prometheus for Testing
+
+```bash
+docker run --rm --detach \
+  --name my-prometheus \
+  --publish 9090:9090 \
+  --volume prometheus-volume:/prometheus \
+  --volume "$(pwd)"/alerts/prometheus.yml:/etc/prometheus/prometheus.yml \
+  --volume "$(pwd)"/alerts/prometheus/rules:/etc/prometheus/rules \
+  prom/prometheus
+```
+
 ## Architecture
 
 PRism follows a modular architecture:
@@ -151,6 +160,7 @@ PRism follows a modular architecture:
 -   **github:** Interfaces with GitHub API
 -   **llm:** Manages interactions with Claude AI
 -   **utils:** Provides helper functions and parsers
+-   **alerts:** Contains Prometheus alert configurations and rules
 
 ## Requirements
 
@@ -158,4 +168,10 @@ PRism follows a modular architecture:
 -   GitHub access token
 -   Claude AI API key
 -   Grafana and/or Amplitude credentials (for dashboard creation)
-```
+-   Docker (for running Prometheus locally)
+
+## Troubleshooting
+
+- **API Rate Limits**: If you encounter GitHub API rate limits, try authenticating with a token that has higher rate limits
+- **Large PRs**: For PRs with very large diffs, use the `--max-diff-size` flag to limit the analysis size
+- **LLM Errors**: If Claude API returns errors, check your API key and ensure your account has sufficient credits
