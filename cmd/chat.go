@@ -48,6 +48,16 @@ func runChat() {
 		log.Fatalf("Error fetching PR details: %v", err)
 	}
 
+	// Generate repo embeddings for context
+	repoURL := fmt.Sprintf("https://github.com/%s/%s", cfg.RepoOwner, cfg.RepoName)
+	log.Printf("Generating code embeddings for repository: %s\n", repoURL)
+	embeddings, err := llm.GenerateCodeEmbeddingsFromGitHub(cfg, repoURL)
+	if err != nil {
+		log.Printf("Warning: Error generating code embeddings: %v", err)
+	} else {
+		log.Printf("Successfully generated embeddings for %d files", len(embeddings))
+	}
+
 	// Start chat loop
 	reader := bufio.NewReader(os.Stdin)
 	conversation := []string{}
@@ -68,11 +78,42 @@ func runChat() {
 			break
 		}
 
+		// Find relevant code files for context based on the query
+		var relevantFiles []string
+		var relevantFileContents []string
+		if embeddings != nil && len(embeddings) > 0 {
+			relevantFiles, err = llm.FindRelevantFiles(input, embeddings, cfg, 3)
+			if err != nil {
+				log.Printf("Warning: Error finding relevant files: %v", err)
+			} else if len(relevantFiles) > 0 {
+				log.Printf("Found %d relevant files for query", len(relevantFiles))
+
+				// Add file contents to context
+				for _, filePath := range relevantFiles {
+					// Find the matching embedding to get content
+					for _, emb := range embeddings {
+						if emb.FilePath == filePath {
+							relevantFileContents = append(relevantFileContents,
+								fmt.Sprintf("File: %s\n%s", filePath, emb.Content))
+							break
+						}
+					}
+				}
+			}
+		}
+
 		// Add user message to conversation
 		conversation = append(conversation, "User: "+input)
 
-		// Build complete prompt with conversation history
+		// Build complete prompt with conversation history and code context
 		prompt := strings.Join(conversation, "\n")
+
+		// Add code context if available
+		if len(relevantFileContents) > 0 {
+			codeContext := "System: The following code files are relevant to the query:\n" +
+				strings.Join(relevantFileContents, "\n\n")
+			prompt = codeContext + "\n\n" + prompt
+		}
 
 		// Call Claude API with conversation
 		response, err := llm.SimpleClaudeChat(prompt, cfg)
