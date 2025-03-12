@@ -77,7 +77,6 @@ func init() {
 	viper.BindPFlag("datadog_api_key", rootCmd.PersistentFlags().Lookup("datadog_api_key"))
 	viper.BindPFlag("datadog_app_key", rootCmd.PersistentFlags().Lookup("datadog_app_key"))
 	viper.BindPFlag("prometheus_config_path", rootCmd.PersistentFlags().Lookup("prometheus_config_path"))
-	viper.BindPFlag("reload_prometheus", rootCmd.PersistentFlags().Lookup("reload_prometheus"))
 
 	// Bind env variables
 	viper.BindEnv("github_token", "GITHUB_TOKEN")
@@ -100,7 +99,6 @@ func init() {
 	viper.BindEnv("datadog_api_key", "DATADOG_API_KEY")
 	viper.BindEnv("datadog_app_key", "DATADOG_APP_KEY")
 	viper.BindEnv("prometheus_config_path", "PROMETHEUS_CONFIG_PATH")
-	viper.BindEnv("reload_prometheus", "RELOAD_PROMETHEUS")
 }
 
 // initConfig reads in config file and ENV variables if set

@@ -24,6 +24,7 @@ func LoadConfig() Config {
 		GrafanaServiceAccountToken: viper.GetString("grafana_service_account_token"),
 		GrafanaURL:                 viper.GetString("grafana_url"),
 		PrometheusAlertmanagerURL:  viper.GetString("prometheus_alertmanager_url"),
+		PrometheusConfigPath:       viper.GetString("prometheus_config_path"),
 		PrometheusAuthToken:        viper.GetString("prometheus_auth_token"),
 		DatadogAPIKey:              viper.GetString("datadog_api_key"),
 		DatadogAppKey:              viper.GetString("datadog_app_key"),
@@ -65,7 +66,6 @@ type Config struct {
 	DatadogAPIKey              string
 	DatadogAppKey              string
 	PrometheusConfigPath       string
-	ReloadPrometheus           bool
 }
 
 // ObservabilityRecommendation represents the recommendations from Claude

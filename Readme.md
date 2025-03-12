@@ -88,6 +88,16 @@ PRism is an AI-powered tool that analyzes GitHub pull requests using Claude AI t
 
 PRism can be configured using environment variables, command-line flags, or a config file.
 
+### To run Prometheus (For testing)
+
+`docker run --rm --detach \
+  --name my-prometheus \
+  --publish 9090:9090 \
+  --volume prometheus-volume:/prometheus \
+  --volume "$(pwd)"/alerts/prometheus.yml:/etc/prometheus/prometheus.yml \
+  --volume "$(pwd)"/alerts/prometheus/rules:/etc/prometheus/rules \
+  prom/prometheus`
+
 ### Environment Variables
 
 Create a `.env` file with the following variables:

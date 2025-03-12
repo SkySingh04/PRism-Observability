@@ -4,11 +4,10 @@ import (
 	"PRism/config"
 	"PRism/utils"
 	"fmt"
-	"net/http"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 func CreatePrometheusAlert(suggestion config.AlertSuggestion, cfg config.Config) error {
@@ -17,52 +16,25 @@ func CreatePrometheusAlert(suggestion config.AlertSuggestion, cfg config.Config)
 
 	// Ensure we have a valid path
 	rulesDir := cfg.PrometheusConfigPath
+	log.Println("rulesDir: ", rulesDir)
 	if !filepath.IsAbs(rulesDir) {
 		// If not absolute, use current directory
+		log.Println("rulesDir is not absolute")
 		currentDir, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("failed to get current directory: %w", err)
 		}
 		rulesDir = filepath.Join(currentDir, cfg.PrometheusConfigPath)
-	}
-
-	// Create rules directory if it doesn't exist
-	rulesPath := filepath.Join(rulesDir, "rules")
-	if err := os.MkdirAll(rulesPath, 0755); err != nil {
-		return fmt.Errorf("failed to create rules directory: %w", err)
+		log.Println("rulesDir: ", rulesDir)
 	}
 
 	// Write the rule to file
-	rulePath := filepath.Join(rulesPath, normalizeFileName(suggestion.Name)+".yml")
+	rulePath := filepath.Join(rulesDir, normalizeFileName(suggestion.Name)+".yml")
 	if err := os.WriteFile(rulePath, []byte(alertRule), 0644); err != nil {
 		return fmt.Errorf("failed to write Prometheus alert rule file: %w", err)
 	}
 
 	fmt.Printf("Created Prometheus alert rule at: %s\n", rulePath)
-
-	// Optionally trigger reload
-	if cfg.ReloadPrometheus {
-		reloadURL := fmt.Sprintf("%s/-/reload", cfg.PrometheusAlertmanagerURL)
-		req, err := http.NewRequest("POST", reloadURL, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create reload request: %w", err)
-		}
-
-		if cfg.PrometheusAuthToken != "" {
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", cfg.PrometheusAuthToken))
-		}
-
-		client := &http.Client{Timeout: 10 * time.Second}
-		resp, err := client.Do(req)
-		if err != nil {
-			return fmt.Errorf("failed to reload Prometheus: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode >= 300 {
-			return fmt.Errorf("failed to reload Prometheus (status %d)", resp.StatusCode)
-		}
-	}
 
 	return nil
 }

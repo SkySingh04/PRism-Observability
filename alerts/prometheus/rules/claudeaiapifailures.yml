@@ -1,0 +1,13 @@
+groups:
+- name: metric
+  rules:
+  - alert: ClaudeAIAPIFailures
+    expr: sum(increase(http_request_total{service="prism", target_service="claude_ai", status_code=~"5.*|4.*"}[5m])) > 5
+    for: 5m
+    labels:
+      severity: p0
+      type: metric
+    annotations:
+      summary: "ClaudeAIAPIFailures"
+      description: "Multiple failed requests to Claude AI API, which is critical for the core functionality of generating observability recommendations."
+      runbook_url: "https://github.com/organization/prism/wiki/claude-ai-integration-issues"
