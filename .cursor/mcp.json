@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+      "prism": {
+        "command": "prism",
+        "args": ["chat", "--mcp"],
+        "env": {
+          "PRISM_VERBOSITY": "info"
+        }
+      }
+    }
+  }

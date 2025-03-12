@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -145,24 +144,4 @@ func FindRelevantFiles(query string, embeddings []CodeEmbedding, cfg config.Conf
 	}
 
 	return result, nil
-}
-
-// cosineSimilarity calculates similarity between two vectors
-func cosineSimilarity(a, b []float32) float32 {
-	var dotProduct, magnitudeA, magnitudeB float32
-
-	for i := 0; i < len(a); i++ {
-		dotProduct += a[i] * b[i]
-		magnitudeA += a[i] * a[i]
-		magnitudeB += b[i] * b[i]
-	}
-
-	magnitudeA = float32(math.Sqrt(float64(magnitudeA)))
-	magnitudeB = float32(math.Sqrt(float64(magnitudeB)))
-
-	if magnitudeA == 0 || magnitudeB == 0 {
-		return 0
-	}
-
-	return dotProduct / (magnitudeA * magnitudeB)
 }

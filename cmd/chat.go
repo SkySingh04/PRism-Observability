@@ -1,10 +1,10 @@
-// cmd/chat.go
 package cmd
 
 import (
 	"PRism/config"
 	"PRism/github"
 	"PRism/llm"
+	"PRism/mcp"
 	"bufio"
 	"context"
 	"fmt"
@@ -21,15 +21,25 @@ var chatCmd = &cobra.Command{
 	Long: `Start an interactive chat session with Claude AI about your repository.
 You can ask questions about code, PRs, best practices, and more.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		runChat()
+		mcpMode, _ := cmd.Flags().GetBool("mcp")
+		if mcpMode {
+			runMCPServer()
+		} else {
+			runChat()
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(chatCmd)
-
 	chatCmd.Flags().Bool("with-context", true, "Include repository context in the conversation")
 	chatCmd.Flags().Int("pr-context", 0, "Specific PR to use as context (defaults to current PR if set)")
+	chatCmd.Flags().Bool("mcp", false, "Run as an MCP server for Cursor integration")
+}
+
+func runMCPServer() {
+	log.Println("Starting PRism in MCP server mode...")
+	mcp.RunMCPServer()
 }
 
 func runChat() {
