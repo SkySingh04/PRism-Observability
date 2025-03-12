@@ -64,6 +64,8 @@ type Config struct {
 	PrometheusAuthToken        string
 	DatadogAPIKey              string
 	DatadogAppKey              string
+	PrometheusConfigPath       string
+	ReloadPrometheus           bool
 }
 
 // ObservabilityRecommendation represents the recommendations from Claude

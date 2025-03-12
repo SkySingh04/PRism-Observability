@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -251,7 +250,7 @@ func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]confi
 	// 	// Return empty recommendations for LGTM case
 	// 	return &config.ObservabilityRecommendation{}, nil, responseText
 	// }
-	log.Println(responseText)
+	// log.Println(responseText)
 	// Parse suggestions for PR comments
 	suggestions, err := utils.ParseLLMSuggestionsForAlerts(responseText)
 	if err != nil {
