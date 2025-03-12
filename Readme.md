@@ -90,14 +90,15 @@ PRism can be configured using environment variables, command-line flags, or a co
 
 ### To run Prometheus (For testing)
 
-`docker run --rm --detach \
+```
+docker run --rm --detach \
   --name my-prometheus \
   --publish 9090:9090 \
   --volume prometheus-volume:/prometheus \
   --volume "$(pwd)"/alerts/prometheus.yml:/etc/prometheus/prometheus.yml \
   --volume "$(pwd)"/alerts/prometheus/rules:/etc/prometheus/rules \
-  prom/prometheus`
-
+  prom/prometheus                       
+  ```
 ### Environment Variables
 
 Create a `.env` file with the following variables:

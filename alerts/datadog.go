@@ -5,6 +5,7 @@ import (
 	"PRism/utils"
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	datadog "github.com/DataDog/datadog-api-client-go/api/v1/datadog"
@@ -12,6 +13,7 @@ import (
 
 func CreateDatadogAlert(suggestion config.AlertSuggestion, cfg config.Config) error {
 	configuration := datadog.NewConfiguration()
+	configuration.Host = "api.ap1.datadoghq.com"
 	configuration.AddDefaultHeader("DD-API-KEY", cfg.DatadogAPIKey)
 	configuration.AddDefaultHeader("DD-APPLICATION-KEY", cfg.DatadogAppKey)
 	client := datadog.NewAPIClient(configuration)
@@ -27,7 +29,7 @@ func CreateDatadogAlert(suggestion config.AlertSuggestion, cfg config.Config) er
 	if err != nil {
 		return fmt.Errorf("failed to parse threshold: %w", err)
 	}
-
+	log.Printf("Attempting to create alert with query: %s", suggestion.Query)
 	// Create alert request
 	alertRequest := datadog.Monitor{
 		Name:    &suggestion.Name,

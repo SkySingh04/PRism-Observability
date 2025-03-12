@@ -99,7 +99,7 @@ func runAlerts() {
 					} else {
 						log.Printf("Successfully created Prometheus alert: %s", suggestion.Name)
 					}
-				} else if suggestion.Type == "datadog" {
+				} else if suggestion.Type == "datadog" || suggestion.Type == "log" {
 					err := alerts.CreateDatadogAlert(suggestion, cfg)
 					if err != nil {
 						log.Printf("Error creating Datadog alert '%s': %v", suggestion.Name, err)
