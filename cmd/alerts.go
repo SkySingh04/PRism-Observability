@@ -18,9 +18,8 @@ import (
 
 var alertsCmd = &cobra.Command{
 	Use:   "alerts",
-	Short: "Manage PR alerts",
-	Long: `Configure and view alerts for PR issues and observability concerns.
-Alerts can be set for specific patterns or thresholds.`,
+	Short: "Create alerts based on PR changes",
+	Long:  `Create alerts based on PR changes`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runAlerts()
 	},

@@ -56,6 +56,10 @@ type Config struct {
 	AmplitudeAPIKey            string
 	AmplitudeSecretKey         string
 	AmplitudeAPIToken          string
+	PrometheusAlertmanagerURL  string
+	PrometheusAuthToken        string
+	DatadogAPIKey              string
+	DatadogAppKey              string
 }
 
 // ObservabilityRecommendation represents the recommendations from Claude
