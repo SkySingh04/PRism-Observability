@@ -63,6 +63,18 @@ func ExtractJSONFromText(text string) string {
 	return ""
 }
 
+func StringPtr(s string) *string {
+	return &s
+}
+
+func BoolPtr(b bool) *bool {
+	return &b
+}
+
+func Int64Ptr(i int64) *int64 {
+	return &i
+}
+
 // Helper function to convert Grafana panel types to Amplitude chart types
 func ConvertPanelType(panelType string) string {
 	switch panelType {
