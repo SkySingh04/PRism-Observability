@@ -1,0 +1,13 @@
+groups:
+- name: log
+  rules:
+  - alert: Datadog Dashboard Creation Failures
+    expr: count({job="prism"} |= "Error creating Datadog dashboard" [15m]) > 3
+    for: 15m
+    labels:
+      severity: p1
+      type: log
+    annotations:
+      summary: "Datadog Dashboard Creation Failures"
+      description: "Multiple failures when creating Datadog dashboards, indicating potential API issues or configuration problems"
+      runbook_url: "https://internal.docs/runbooks/datadog-integration-troubleshooting"

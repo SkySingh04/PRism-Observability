@@ -102,15 +102,15 @@ func runAlerts() {
 		if input == "y" || input == "yes" {
 			log.Println("INFO: Creating alerts...")
 			for _, suggestion := range *suggestions {
-				if suggestion.Type == "prometheus" || suggestion.Type == "metric" {
-					// log.Printf("INFO: Creating Prometheus alert '%s'...", suggestion.Name)
-					// err := alerts.CreatePrometheusAlert(suggestion, cfg)
-					// if err != nil {
-					// 	log.Printf("ERROR: Failed to create Prometheus alert '%s': %v", suggestion.Name, err)
-					// } else {
-					// 	log.Printf("INFO: Successfully created Prometheus alert: %s", suggestion.Name)
-					// }
-				} else if suggestion.Type == "datadog" || suggestion.Type == "log" {
+				if suggestion.Type == "prometheus" || suggestion.Type == "metric" || suggestion.Type == "log" {
+					log.Printf("INFO: Creating Prometheus alert '%s'...", suggestion.Name)
+					err := alerts.CreatePrometheusAlert(suggestion, cfg)
+					if err != nil {
+						log.Printf("ERROR: Failed to create Prometheus alert '%s': %v", suggestion.Name, err)
+					} else {
+						log.Printf("INFO: Successfully created Prometheus alert: %s", suggestion.Name)
+					}
+				} else if suggestion.Type == "datadog" {
 					log.Printf("INFO: Creating Datadog alert '%s'...", suggestion.Name)
 					err := alerts.CreateDatadogAlert(suggestion, cfg)
 					if err != nil {
