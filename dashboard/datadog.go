@@ -60,7 +60,7 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 		}
 
 		// Create a single query based on panel name if targets aren't properly formatted
-		queryStr := fmt.Sprintf("avg:system.cpu.user{*} by {host}.rollup(avg, 30)")
+		queryStr := "avg:system.cpu.user{*} by {host}.rollup(avg, 30)"
 
 		// Handle the targets differently depending on type
 		var targets []interface{}
@@ -314,7 +314,11 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 	ctx := context.Background()
 	dashboard, resp, err := apiClient.DashboardsApi.CreateDashboard(ctx, dashboardRequest)
 	if err != nil {
-		log.Printf("Failed to create Datadog dashboard, status: %v", resp.StatusCode)
+		if resp != nil {
+			log.Printf("Failed to create Datadog dashboard, status: %v", resp.StatusCode)
+		} else {
+			log.Printf("Failed to create Datadog dashboard, response was nil")
+		}
 		if resp != nil && resp.Body != nil {
 			body := make([]byte, 1024)
 			n, _ := resp.Body.Read(body)
