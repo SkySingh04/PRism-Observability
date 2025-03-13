@@ -185,15 +185,8 @@ func CallClaudeAPIForDashboards(prompt string, configStruct config.Config) (*[]c
 		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText, ""
 	}
 
-	log.Print("Parsing LLM summary")
-	summary, err := utils.ParseLLMSummary(responseText)
-	if err != nil {
-		log.Printf("Error parsing summary: %v", err)
-		return nil, fmt.Errorf("error parsing summary: %v", err), responseText, ""
-	}
-
 	log.Printf("Successfully processed Claude API response. Found %d dashboard suggestions", len(suggestions))
-	return &suggestions, nil, responseText, summary
+	return &suggestions, nil, responseText, ""
 }
 
 func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]config.AlertSuggestion, error, string) {

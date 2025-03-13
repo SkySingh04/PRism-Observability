@@ -38,21 +38,55 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 	// Create widgets from panels
 	widgets := []datadog.Widget{}
 	for _, panel := range panels {
-		title := panel["title"].(string)
-		gridPos := panel["gridPos"].(map[string]interface{})
-		targets := panel["targets"].([]interface{})
+		title, ok := panel["title"].(string)
+		if !ok {
+			log.Printf("Warning: panel title is not a string, skipping panel")
+			continue
+		}
+
+		gridPos, ok := panel["gridPos"].(map[string]interface{})
+		if !ok {
+			log.Printf("Warning: gridPos is not a map, skipping panel %s", title)
+			continue
+		}
+
+		targets, ok := panel["targets"].([]interface{})
+		if !ok {
+			log.Printf("Warning: targets is not an array, skipping panel %s", title)
+			continue
+		}
 
 		// Create widget requests
 		requests := []datadog.TimeseriesWidgetRequest{}
 		for _, target := range targets {
-			targetID := target.(map[string]interface{})["refId"].(string)
+			targetMap, ok := target.(map[string]interface{})
+			if !ok {
+				log.Printf("Warning: target is not a map in panel %s, skipping target", title)
+				continue
+			}
+
+			refId, ok := targetMap["refId"].(string)
+			if !ok {
+				log.Printf("Warning: refId is not a string in panel %s, skipping target", title)
+				continue
+			}
+
 			for _, query := range queries {
-				if query["refId"].(string) == targetID {
-					queryStr := query["expr"].(string)
+				queryRefId, ok := query["refId"].(string)
+				if !ok {
+					continue
+				}
+
+				if queryRefId == refId {
+					queryExpr, ok := query["expr"].(string)
+					if !ok {
+						log.Printf("Warning: expr is not a string in query %s, skipping query", queryRefId)
+						continue
+					}
 
 					// Create a timeserieswidgetrequest
 					request := datadog.TimeseriesWidgetRequest{
-						Q:           &queryStr,
+						Q:           &queryExpr,
 						DisplayType: datadog.WIDGETDISPLAYTYPE_LINE.Ptr(),
 						Style: &datadog.WidgetRequestStyle{
 							Palette:   (*string)(datadog.WIDGETPALETTE_BLACK_ON_LIGHT_GREEN.Ptr()),
@@ -65,11 +99,30 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 			}
 		}
 
-		// Extract layout parameters
-		x := int64(gridPos["x"].(float64))
-		y := int64(gridPos["y"].(float64))
-		w := int64(gridPos["w"].(float64))
-		h := int64(gridPos["h"].(float64))
+		// Extract layout parameters with type checking
+		x, ok := getInt64FromFloat(gridPos, "x")
+		if !ok {
+			log.Printf("Warning: x is not a number in panel %s, using default 0", title)
+			x = 0
+		}
+
+		y, ok := getInt64FromFloat(gridPos, "y")
+		if !ok {
+			log.Printf("Warning: y is not a number in panel %s, using default 0", title)
+			y = 0
+		}
+
+		w, ok := getInt64FromFloat(gridPos, "w")
+		if !ok {
+			log.Printf("Warning: w is not a number in panel %s, using default 12", title)
+			w = 12
+		}
+
+		h, ok := getInt64FromFloat(gridPos, "h")
+		if !ok {
+			log.Printf("Warning: h is not a number in panel %s, using default 8", title)
+			h = 8
+		}
 
 		// Create widget definition
 		legendSize := "small"
@@ -118,11 +171,46 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 
 	// Create the dashboard
 	ctx := context.Background()
-	dashboard, _, err := apiClient.DashboardsApi.CreateDashboard(ctx).Body(dashboardRequest).Execute()
+	dashboard, _, err := apiClient.DashboardsApi.CreateDashboard(ctx, dashboardRequest)
+	fmt.Println(dashboard)
 	if err != nil {
+		log.Printf("Failed to create Datadog dashboard: %v", err)
 		return fmt.Errorf("failed to create Datadog dashboard: %w", err)
 	}
 
 	log.Printf("Successfully created Datadog dashboard with ID: %s", dashboard.GetId())
 	return nil
+}
+
+// Helper function to safely convert interface{} to int64
+func getInt64FromFloat(m map[string]interface{}, key string) (int64, bool) {
+	val, exists := m[key]
+	if !exists {
+		return 0, false
+	}
+
+	// Try as float64 (common for JSON numbers)
+	if floatVal, ok := val.(float64); ok {
+		return int64(floatVal), true
+	}
+
+	// Try as int
+	if intVal, ok := val.(int); ok {
+		return int64(intVal), true
+	}
+
+	// Try as int64
+	if int64Val, ok := val.(int64); ok {
+		return int64Val, true
+	}
+
+	// Try as string
+	if strVal, ok := val.(string); ok {
+		var result float64
+		if _, err := fmt.Sscanf(strVal, "%f", &result); err == nil {
+			return int64(result), true
+		}
+	}
+
+	return 0, false
 }
