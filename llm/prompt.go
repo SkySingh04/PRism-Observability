@@ -112,8 +112,8 @@ func BuildDashboardPrompt(prDetails map[string]interface{}, prdContent string) s
 	b.WriteString("# Observability Dashboard Analysis\n\n")
 	b.WriteString("As an AI observability assistant, analyze the following PR and PRD to suggest dashboard improvements for:\n")
 	b.WriteString("1. Grafana dashboards based on OpenTelemetry instrumentation\n")
-	b.WriteString("2. Amplitude dashboards for event tracking\n")
-	b.WriteString("3. Log-based dashboards and alerts\n\n")
+	b.WriteString("2. Datadog dashboards based on OpenTelemetry instrumentation\n")
+	b.WriteString("3. Amplitude dashboards for event tracking\n")
 
 	// Add PR details
 	log.Print("Adding PR details to prompt")
@@ -163,22 +163,22 @@ func BuildDashboardPrompt(prDetails map[string]interface{}, prdContent string) s
 	b.WriteString("   - Process-level dashboards showing resource utilization\n")
 	b.WriteString("   - Custom dashboards for business metrics\n\n")
 
-	b.WriteString("2. Amplitude Dashboards for event tracking:\n")
+	b.WriteString("2. Datadog Dashboards for OpenTelemetry data:\n")
+	b.WriteString("   - Service-level dashboards showing request rates, latencies, and error rates\n")
+	b.WriteString("   - Process-level dashboards showing resource utilization\n")
+	b.WriteString("   - Custom dashboards for business metrics\n\n")
+
+	b.WriteString("3. Amplitude Dashboards for event tracking:\n")
 	b.WriteString("   - User journey funnels\n")
 	b.WriteString("   - Feature adoption metrics\n")
 	b.WriteString("   - User engagement patterns\n\n")
-
-	b.WriteString("3. Log-based Dashboards:\n")
-	b.WriteString("   - Error rate dashboards\n")
-	b.WriteString("   - Log volume anomaly detection\n")
-	b.WriteString("   - Critical path monitoring\n\n")
 
 	// API-specific format
 	log.Print("Adding dashboard format instructions")
 	b.WriteString("Format EACH dashboard suggestion in EXACTLY this format for parsing:\n\n")
 
 	b.WriteString("DASHBOARD: [Dashboard name]\n")
-	b.WriteString("TYPE: [grafana or amplitude]\n")
+	b.WriteString("TYPE: [grafana or datadog or amplitude]\n")
 	b.WriteString("PRIORITY: [High, Medium, or Low]\n")
 	b.WriteString("QUERIES:\n")
 	b.WriteString("```json\n")
@@ -222,9 +222,10 @@ func BuildDashboardPrompt(prDetails map[string]interface{}, prdContent string) s
 	b.WriteString("1. Only suggest dashboards based on telemetry data present in the code\n")
 	b.WriteString("2. Focus on actionable insights, not just vanity metrics\n")
 	b.WriteString("3. For Grafana, use valid Prometheus or Loki queries based on the instrumentation\n")
-	b.WriteString("4. For Amplitude, use valid event names and properties from the code\n")
-	b.WriteString("5. Provide dashboard configuration in EXACTLY the format specified above\n")
-	b.WriteString("6. Include at least the minimum required fields for API creation\n\n")
+	b.WriteString("4. For Datadog, use valid Datadog queries based on the instrumentation\n")
+	b.WriteString("5. For Amplitude, use valid event names and properties from the code\n")
+	b.WriteString("6. Provide dashboard configuration in EXACTLY the format specified above\n")
+	b.WriteString("7. Include at least the minimum required fields for API creation\n\n")
 
 	b.WriteString("## Identified Telemetry\n")
 	b.WriteString("Before providing dashboard suggestions, list all identified spans, metrics, logs, and events with their attributes.\n\n")

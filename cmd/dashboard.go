@@ -118,6 +118,12 @@ func runDashboard() {
 					} else {
 						log.Printf("Successfully created Amplitude dashboard: %s", suggestion.Name)
 					}
+				} else if suggestion.Type == "datadog" {
+					log.Printf("Creating Datadog dashboard: %s", suggestion.Name)
+					err := dashboard.CreateDatadogDashboard(suggestion, cfg)
+					if err != nil {
+						log.Printf("Error creating Datadog dashboard '%s': %v", suggestion.Name, err)
+					}
 				}
 			}
 			log.Println("Dashboard creation process completed")
