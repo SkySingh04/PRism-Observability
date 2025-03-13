@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -16,12 +17,14 @@ import (
 
 // initializeGithubClient creates and returns a GitHub client with proper authentication
 func InitializeGithubClient(config config.Config, ctx context.Context) *github.Client {
+	log.Printf("Initializing GitHub client")
 	return github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: config.GithubToken},
 	)))
 }
 
 func FetchPRDetails(client *github.Client, config config.Config) (map[string]interface{}, error) {
+	log.Printf("Fetching PR details for PR #%d in %s/%s", config.PRNumber, config.RepoOwner, config.RepoName)
 	result := make(map[string]interface{})
 
 	// Fetch PR details
@@ -32,6 +35,7 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 		config.PRNumber,
 	)
 	if err != nil {
+		log.Printf("Error fetching PR details: %v", err)
 		return nil, fmt.Errorf("error fetching PR details: %v", err)
 	}
 
@@ -43,6 +47,7 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	// Fetch PR diff
 	opt := &github.ListOptions{}
 	ctx := context.Background()
+	log.Printf("Fetching commits for PR #%d", config.PRNumber)
 	commits, _, err := client.PullRequests.ListCommits(
 		ctx,
 		config.RepoOwner,
@@ -51,10 +56,12 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 		opt,
 	)
 	if err != nil {
+		log.Printf("Error fetching PR commits: %v", err)
 		return nil, fmt.Errorf("error fetching PR commits: %v", err)
 	}
 
 	// Get PR files (diff)
+	log.Printf("Fetching files for PR #%d", config.PRNumber)
 	files, _, err := client.PullRequests.ListFiles(
 		context.Background(),
 		config.RepoOwner,
@@ -63,6 +70,7 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 		opt,
 	)
 	if err != nil {
+		log.Printf("Error fetching PR files: %v", err)
 		return nil, fmt.Errorf("error fetching PR files: %v", err)
 	}
 
@@ -70,10 +78,12 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	fileDetails := []map[string]interface{}{}
 	totalDiffSize := 0
 
+	log.Printf("Processing %d files from PR", len(files))
 	for _, file := range files {
 		// Check if we're exceeding max diff size
 		patchSize := len(file.GetPatch())
 		if totalDiffSize+patchSize > config.MaxDiffSize {
+			log.Printf("Skipping file %s as it would exceed max diff size", file.GetFilename())
 			continue
 		}
 		totalDiffSize += patchSize
@@ -91,27 +101,32 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	result["files"] = fileDetails
 	result["commits"] = len(commits)
 
+	log.Printf("Successfully fetched PR details with %d files and %d commits", len(fileDetails), len(commits))
 	return result, nil
 }
 
 // PostSummaryComment posts a summary comment to the PR's conversation
 func PostSummaryComment(owner, repo string, prNumber int, summary, token string) error {
 	if summary == "" {
+		log.Printf("No summary provided, skipping comment creation")
 		return nil // No summary to post
 	}
 
+	log.Printf("Posting summary comment to PR #%d in %s/%s", prNumber, owner, repo)
 	summaryPayload := map[string]interface{}{
 		"body": summary,
 	}
 
 	summaryJSON, err := json.Marshal(summaryPayload)
 	if err != nil {
+		log.Printf("Error marshaling summary payload: %v", err)
 		return fmt.Errorf("error marshaling summary payload: %v", err)
 	}
 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d/comments", owner, repo, prNumber)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(summaryJSON))
 	if err != nil {
+		log.Printf("Error creating HTTP request for summary: %v", err)
 		return fmt.Errorf("error creating HTTP request for summary: %v", err)
 	}
 
@@ -121,50 +136,62 @@ func PostSummaryComment(owner, repo string, prNumber int, summary, token string)
 	httpClient := &http.Client{}
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		log.Printf("Error posting summary comment: %v", err)
 		return fmt.Errorf("error posting summary comment: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		log.Printf("GitHub API error (%d) for summary comment", resp.StatusCode)
 		return fmt.Errorf("GitHub API error (%d) for summary comment", resp.StatusCode)
 	}
 
+	log.Printf("Successfully posted summary comment")
 	return nil
 }
 
 // CreatePRComments handles inline comments and summary posting
 func CreateObservabilityPRComments(suggestions []config.FileSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
+	log.Printf("Creating observability PR comments for PR #%d", configStruct.PRNumber)
 	ctx := context.Background()
 	client := github.NewClient(nil)
 
 	if configStruct.GithubToken != "" {
+		log.Printf("Configuring GitHub client with authentication token")
 		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: configStruct.GithubToken})
 		tc := oauth2.NewClient(ctx, ts)
 		client = github.NewClient(tc)
 	}
 
 	// Fetch PR to get HEAD SHA
+	log.Printf("Fetching PR to get HEAD SHA")
 	pr, _, err := client.PullRequests.Get(ctx, configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber)
 	if err != nil {
+		log.Printf("Error fetching PR to get HEAD SHA: %v", err)
 		return fmt.Errorf("error fetching PR to get HEAD SHA: %v", err)
 	}
 
 	headSHA := pr.GetHead().GetSHA()
 	if headSHA == "" {
+		log.Printf("Could not get HEAD SHA from PR")
 		return fmt.Errorf("could not get HEAD SHA from PR")
 	}
 
 	// Post the summary comment
+	log.Printf("Posting summary comment")
 	if err := PostSummaryComment(configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, summary, configStruct.GithubToken); err != nil {
 		return err
 	}
 
 	// Post inline comments
+	log.Printf("Processing %d inline suggestions", len(suggestions))
 	for _, suggestion := range suggestions {
+		log.Printf("Creating inline comment for file %s at line %s", suggestion.FileName, suggestion.LineNum)
 		commentBody := fmt.Sprintf("```suggestion\n%s\n```", suggestion.Content)
 
 		lineNum, err := strconv.Atoi(suggestion.LineNum)
 		if err != nil {
+			log.Printf("Invalid line number %s: %v", suggestion.LineNum, err)
 			return fmt.Errorf("invalid line number: %v", err)
 		}
 
@@ -177,12 +204,14 @@ func CreateObservabilityPRComments(suggestions []config.FileSuggestion, prDetail
 
 		jsonData, err := json.Marshal(payload)
 		if err != nil {
+			log.Printf("Error marshaling comment payload: %v", err)
 			return fmt.Errorf("error marshaling comment payload: %v", err)
 		}
 
 		url := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls/%d/comments", configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber)
 		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 		if err != nil {
+			log.Printf("Error creating HTTP request: %v", err)
 			return fmt.Errorf("error creating HTTP request: %v", err)
 		}
 
@@ -193,35 +222,43 @@ func CreateObservabilityPRComments(suggestions []config.FileSuggestion, prDetail
 		httpClient := &http.Client{}
 		resp, err := httpClient.Do(req)
 		if err != nil {
+			log.Printf("Error posting PR comment: %v", err)
 			return fmt.Errorf("error posting PR comment: %v", err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			log.Printf("GitHub API error (%d): %s", resp.StatusCode, string(jsonData))
 			return fmt.Errorf("GitHub API error (%d): %s", resp.StatusCode, string(jsonData))
 		}
 	}
 
+	log.Printf("Successfully created all observability PR comments")
 	return nil
 }
 
 func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetails map[string]interface{}, configStruct config.Config, summary string) error {
+	log.Printf("Creating dashboard PR comments for PR #%d", configStruct.PRNumber)
 	ctx := context.Background()
 	client := github.NewClient(nil)
 
 	if configStruct.GithubToken != "" {
+		log.Printf("Configuring GitHub client with authentication token")
 		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: configStruct.GithubToken})
 		tc := oauth2.NewClient(ctx, ts)
 		client = github.NewClient(tc)
 	}
 
 	// Post the summary comment first
+	log.Printf("Posting summary comment")
 	if err := PostSummaryComment(configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, summary, configStruct.GithubToken); err != nil {
 		return err
 	}
 
 	// Create a detailed comment for each dashboard suggestion
+	log.Printf("Processing %d dashboard suggestions", len(suggestions))
 	for _, suggestion := range suggestions {
+		log.Printf("Creating comment for dashboard suggestion: %s", suggestion.Name)
 		// Format a readable dashboard suggestion comment
 		commentBody := fmt.Sprintf("## Dashboard Suggestion: %s\n\n", suggestion.Name)
 		commentBody += fmt.Sprintf("**Type:** %s\n", suggestion.Type)
@@ -244,30 +281,31 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 
 		_, _, err := client.Issues.CreateComment(ctx, configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, issueComment)
 		if err != nil {
+			log.Printf("Error posting dashboard comment: %v", err)
 			return fmt.Errorf("error posting dashboard comment: %v", err)
 		}
 	}
 
+	log.Printf("Successfully created all dashboard PR comments")
 	return nil
 }
 
 func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[string]interface{}, configStruct config.Config) error {
+	log.Printf("Creating alerts PR comments for PR #%d", configStruct.PRNumber)
 	ctx := context.Background()
 	client := github.NewClient(nil)
 
 	if configStruct.GithubToken != "" {
+		log.Printf("Configuring GitHub client with authentication token")
 		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: configStruct.GithubToken})
 		tc := oauth2.NewClient(ctx, ts)
 		client = github.NewClient(tc)
 	}
 
-	// // Post the summary comment first
-	// if err := PostSummaryComment(configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, summary, configStruct.GithubToken); err != nil {
-	// 	return err
-	// }
-
 	// Create a detailed comment for each alert suggestion
+	log.Printf("Processing %d alert suggestions", len(suggestions))
 	for _, suggestion := range suggestions {
+		log.Printf("Creating comment for alert suggestion: %s", suggestion.Name)
 		// Format a readable alert suggestion comment
 		commentBody := fmt.Sprintf("## Alert Suggestion: %s\n\n", suggestion.Name)
 		commentBody += fmt.Sprintf("**Type:** %s\n", suggestion.Type)
@@ -296,9 +334,11 @@ func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[
 
 		_, _, err := client.Issues.CreateComment(ctx, configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, issueComment)
 		if err != nil {
+			log.Printf("Error posting alert comment: %v", err)
 			return fmt.Errorf("error posting alert comment: %v", err)
 		}
 	}
 
+	log.Printf("Successfully created all alert PR comments")
 	return nil
 }

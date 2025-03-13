@@ -7,10 +7,19 @@ from transformers import CodeGenForCausalLM, CodeGenTokenizer
 from typing import List, Dict, Tuple
 import argparse
 import json
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 class CodeGenEmbedder:
     def __init__(self, model_name: str = "Salesforce/codegen-350M-mono"):
-        print(f"Loading CodeGen model: {model_name}")
+        logger.info(f"Loading CodeGen model: {model_name}")
         self.tokenizer = CodeGenTokenizer.from_pretrained(model_name)
         
         # Fix: Set pad token to eos token
@@ -22,7 +31,7 @@ class CodeGenEmbedder:
         # Check if GPU is available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
-        print(f"Using device: {self.device}")
+        logger.info(f"Using device: {self.device}")
         
 
     def generate_embedding(self, code_snippet: str) -> np.ndarray:
@@ -43,7 +52,7 @@ class CodeGenEmbedder:
 def clone_github_repo(repo_url: str) -> str:
     """Clone a GitHub repository and return the path to the cloned repo."""
     temp_dir = tempfile.mkdtemp()
-    print(f"Cloning repository {repo_url} to {temp_dir}")
+    logger.info(f"Cloning repository {repo_url} to {temp_dir}")
     
     try:
         subprocess.run(
@@ -54,8 +63,8 @@ def clone_github_repo(repo_url: str) -> str:
         )
         return temp_dir
     except subprocess.CalledProcessError as e:
-        print(f"Error cloning repository: {e}")
-        print(f"Stderr: {e.stderr.decode()}")
+        logger.error(f"Error cloning repository: {e}")
+        logger.error(f"Stderr: {e.stderr.decode()}")
         raise
 
 def is_code_file(file_path: str) -> bool:
@@ -93,7 +102,7 @@ def load_codebase(directory: str) -> List[Dict[str, str]]:
                         "content": content
                     })
                 except Exception as e:
-                    print(f"Error reading file {file_path}: {e}")
+                    logger.error(f"Error reading file {file_path}: {e}")
     
     return code_files
 
@@ -104,19 +113,19 @@ def process_repo(repo_url: str, output_file: str, model_name: str) -> None:
     
     try:
         # Load the codebase
-        print("Loading code files...")
+        logger.info("Loading code files...")
         code_files = load_codebase(repo_dir)
-        print(f"Found {len(code_files)} code files")
+        logger.info(f"Found {len(code_files)} code files")
         
         # Initialize the embedder
         embedder = CodeGenEmbedder(model_name)
         
         # Generate embeddings
-        print("Generating embeddings...")
+        logger.info("Generating embeddings...")
         result = []
         
         for i, file_info in enumerate(code_files):
-            print(f"Processing file {i+1}/{len(code_files)}: {file_info['file_path']}")
+            logger.info(f"Processing file {i+1}/{len(code_files)}: {file_info['file_path']}")
             embedding = embedder.generate_embedding(file_info["content"])
             
             result.append({
@@ -126,15 +135,15 @@ def process_repo(repo_url: str, output_file: str, model_name: str) -> None:
             })
         
         # Save the embeddings
-        print(f"Saving embeddings to {output_file}")
+        logger.info(f"Saving embeddings to {output_file}")
         with open(output_file, "w") as f:
             json.dump(result, f)
             
-        print("Done!")
+        logger.info("Done!")
         
     finally:
         # Clean up the cloned repository
-        print(f"Cleaning up temporary directory: {repo_dir}")
+        logger.info(f"Cleaning up temporary directory: {repo_dir}")
         # Uncomment to remove the directory:
         # import shutil
         # shutil.rmtree(repo_dir)

@@ -158,3 +158,10 @@ type AlertSuggestion struct {
 	Notification string
 	RunbookLink  string
 }
+
+// CodeEmbedding represents an embedding for a code file
+type CodeEmbedding struct {
+	FilePath  string    `json:"file_path"`
+	Content   string    `json:"content"`
+	Embedding []float32 `json:"embedding"`
+}

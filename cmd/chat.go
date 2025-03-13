@@ -38,15 +38,15 @@ func init() {
 }
 
 func runMCPServer() {
-	log.Println("Starting PRism in MCP server mode...")
+	log.Println("INFO: Starting PRism in MCP server mode...")
 	mcp.RunMCPServer()
 }
 
 func runChat() {
 	cfg := config.LoadConfig()
 
-	log.Println("Starting PRism chat session. Type 'exit' or 'quit' to end the session.")
-	log.Printf("Connected to repository: %s/%s\n", cfg.RepoOwner, cfg.RepoName)
+	log.Println("INFO: Starting PRism chat session. Type 'exit' or 'quit' to end the session.")
+	log.Printf("INFO: Connected to repository: %s/%s", cfg.RepoOwner, cfg.RepoName)
 
 	// Initialize context
 	ctx := context.Background()
@@ -55,17 +55,17 @@ func runChat() {
 	// Fetch PR details including diff
 	prDetails, err := github.FetchPRDetails(githubClient, cfg)
 	if err != nil {
-		log.Fatalf("Error fetching PR details: %v", err)
+		log.Fatalf("ERROR: Failed to fetch PR details: %v", err)
 	}
 
 	// Generate repo embeddings for context
 	repoURL := fmt.Sprintf("https://github.com/%s/%s", cfg.RepoOwner, cfg.RepoName)
-	log.Printf("Generating code embeddings for repository: %s\n", repoURL)
+	log.Printf("INFO: Generating code embeddings for repository: %s", repoURL)
 	embeddings, err := llm.GenerateCodeEmbeddingsFromGitHub(cfg, repoURL)
 	if err != nil {
-		log.Printf("Warning: Error generating code embeddings: %v", err)
+		log.Printf("WARN: Failed to generate code embeddings: %v", err)
 	} else {
-		log.Printf("Successfully generated embeddings for %d files", len(embeddings))
+		log.Printf("INFO: Successfully generated embeddings for %d files", len(embeddings))
 	}
 
 	// Start chat loop
@@ -84,19 +84,19 @@ func runChat() {
 		input = strings.TrimSpace(input)
 
 		if input == "exit" || input == "quit" {
-			log.Println("Exiting chat session. Goodbye!")
+			log.Println("INFO: Exiting chat session. Goodbye!")
 			break
 		}
 
 		// Find relevant code files for context based on the query
 		var relevantFiles []string
 		var relevantFileContents []string
-		if embeddings != nil && len(embeddings) > 0 {
+		if embeddings != nil {
 			relevantFiles, err = llm.FindRelevantFiles(input, embeddings, cfg, 3)
 			if err != nil {
-				log.Printf("Warning: Error finding relevant files: %v", err)
+				log.Printf("WARN: Failed to find relevant files: %v", err)
 			} else if len(relevantFiles) > 0 {
-				log.Printf("Found %d relevant files for query", len(relevantFiles))
+				log.Printf("DEBUG: Found %d relevant files for query", len(relevantFiles))
 
 				// Add file contents to context
 				for _, filePath := range relevantFiles {
@@ -126,9 +126,10 @@ func runChat() {
 		}
 
 		// Call Claude API with conversation
+		log.Printf("DEBUG: Sending prompt to Claude API with %d conversation entries", len(conversation))
 		response, err := llm.SimpleClaudeChat(prompt, cfg)
 		if err != nil {
-			log.Printf("Error: %v\n", err)
+			log.Printf("ERROR: Failed to get response from Claude API: %v", err)
 			continue
 		}
 
@@ -139,6 +140,7 @@ func runChat() {
 
 		// Limit conversation history if it gets too long
 		if len(conversation) > 20 {
+			log.Printf("DEBUG: Trimming conversation history from %d to 20 entries", len(conversation))
 			conversation = conversation[len(conversation)-20:]
 		}
 	}

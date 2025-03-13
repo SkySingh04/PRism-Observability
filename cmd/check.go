@@ -6,7 +6,8 @@ import (
 	"PRism/github"
 	"PRism/llm"
 	"context"
-	"io/ioutil"
+	"os"
+
 	"log"
 
 	"github.com/spf13/cobra"
@@ -28,50 +29,57 @@ func init() {
 }
 
 func runCheck() {
+	log.Println("INFO: Starting PR observability check...")
 	cfg := config.LoadConfig()
 
 	// Initialize GitHub client
+	log.Println("INFO: Initializing GitHub client...")
 	ctx := context.Background()
 	githubClient := github.InitializeGithubClient(cfg, ctx)
 
 	// Fetch PR details including diff
+	log.Printf("INFO: Fetching PR details for PR #%d...", cfg.PRNumber)
 	prDetails, err := github.FetchPRDetails(githubClient, cfg)
 	if err != nil {
-		log.Fatalf("Error fetching PR details: %v", err)
+		log.Fatalf("ERROR: Failed to fetch PR details: %v", err)
 	}
+	log.Printf("INFO: Successfully fetched PR details for '%s'", prDetails["title"])
 
 	// Read PRD content if provided
 	prdContent := ""
 	if cfg.PRDFilePath != "" {
-		content, err := ioutil.ReadFile(cfg.PRDFilePath)
+		log.Printf("INFO: Reading PRD file from %s...", cfg.PRDFilePath)
+		content, err := os.ReadFile(cfg.PRDFilePath)
 		if err != nil {
-			log.Printf("Warning: Could not read PRD file: %v", err)
+			log.Printf("WARN: Could not read PRD file: %v", err)
 		} else {
 			prdContent = string(content)
+			log.Printf("INFO: Successfully read PRD file (%d bytes)", len(prdContent))
 		}
 	}
 
 	// Prepare prompt for Claude
+	log.Println("INFO: Building observability analysis prompt...")
 	prompt := llm.BuildObservabilityPrompt(prDetails, prdContent)
 
 	// Call Claude API
+	log.Println("INFO: Calling Claude API for observability analysis...")
 	suggestions, err, _, summary := llm.CallClaudeAPIForObservability(prompt, cfg)
 	if err != nil {
-		log.Fatalf("Error calling Claude API: %v", err)
+		log.Fatalf("ERROR: Failed to call Claude API: %v", err)
 	}
 
 	if suggestions == nil {
-		log.Println("No suggestions found")
-		// log.Println("Response text:")
-		// log.Println(responseText)
+		log.Println("INFO: No observability suggestions found")
 	} else {
-		log.Println("Suggestions found!")
-		// log.Println(suggestions)
+		log.Printf("INFO: Found %d observability suggestions!", len(*suggestions))
 
 		// Create PR comments if suggestions exist
+		log.Println("INFO: Creating PR comments for observability suggestions...")
 		err := github.CreateObservabilityPRComments(*suggestions, prDetails, cfg, summary)
 		if err != nil {
-			log.Fatalf("Error creating Observability PR comments: %v", err)
+			log.Fatalf("ERROR: Failed to create observability PR comments: %v", err)
 		}
+		log.Println("INFO: Successfully created PR comments")
 	}
 }
