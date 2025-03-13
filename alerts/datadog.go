@@ -2,7 +2,6 @@ package alerts
 
 import (
 	"PRism/config"
-	"PRism/utils"
 	"context"
 	"fmt"
 	"log"
@@ -13,138 +12,122 @@ import (
 	datadog "github.com/DataDog/datadog-api-client-go/api/v1/datadog"
 )
 
-// extractThresholdValue extracts numeric values from threshold strings
-func extractThresholdValue(thresholdStr string) (float64, error) {
-	patterns := []string{
-		`^>\s*(\d+(?:\.\d+)?)`,
-		`^<\s*(\d+(?:\.\d+)?)`,
-		`^(\d+(?:\.\d+)?)`,
+// convertPrometheusToDatadogQuery converts Prometheus/Loki-style queries to Datadog format
+func convertPrometheusToDatadogQuery(query string, threshold float64) string {
+	// Handle rate queries with app tag and contains filter
+	rateRegex := regexp.MustCompile(`rate\(\(\{app="([^"]+)"\} \|= "([^"]+)"\)\[([^\]]+)\]\)`)
+	if matches := rateRegex.FindStringSubmatch(query); len(matches) > 3 {
+		app := matches[1]
+		searchTerm := matches[2]
+		// Convert to Datadog log query format
+		return fmt.Sprintf("logs(\"@app:%s %s\").index(\"*\").rollup(\"count\").last(\"%s\") > %g",
+			app, searchTerm, matches[3], threshold)
 	}
 
-	for _, pattern := range patterns {
-		re := regexp.MustCompile(pattern)
-		matches := re.FindStringSubmatch(thresholdStr)
-		if len(matches) > 1 {
-			return strconv.ParseFloat(matches[1], 64)
-		}
+	// Handle absent queries
+	absentRegex := regexp.MustCompile(`absent\(\(\{app="([^"]+)"\} \|= "([^"]+)"\)`)
+	if matches := absentRegex.FindStringSubmatch(query); len(matches) > 2 {
+		app := matches[1]
+		searchTerm := matches[2]
+		// Convert to Datadog absence query
+		return fmt.Sprintf("logs(\"@app:%s %s\").index(\"*\").rollup(\"count\").last(\"24h\") <= 0",
+			app, searchTerm)
 	}
 
-	if strings.Contains(strings.ToLower(thresholdStr), "any") {
-		return 1.0, nil
-	}
+	// Handle ratio queries (error rate calculation)
+	if strings.Contains(query, "sum(rate(") && strings.Contains(query, ")) / sum(rate((") {
+		parts := strings.Split(query, ")) / sum(rate((")
+		if len(parts) == 2 {
+			// Extract the numerator and denominator parts
+			numeratorPart := strings.TrimPrefix(parts[0], "sum(rate((")
+			denominatorPart := strings.TrimSuffix(parts[1], ")) > 0.2")
 
-	return 0.0, fmt.Errorf("could not extract threshold value from: %s", thresholdStr)
-}
+			// Extract app and search terms
+			numRegex := regexp.MustCompile(`\{app="([^"]+)"\} \|= "([^"]+)"\)\[([^\]]+)`)
+			denRegex := regexp.MustCompile(`\{app="([^"]+)"\} \|= "([^"]+)"\)\[([^\]]+)`)
 
-// convertSplunkToDatadogQuery converts Splunk-style queries to Datadog format
-func convertSplunkToDatadogQuery(query string, threshold float64) string {
-	// Handle basic search queries
-	if strings.Contains(query, "index=*") {
-		// Extract search terms
-		searchTerms := ""
-		quotedTerms := regexp.MustCompile(`"([^"]+)"`).FindAllStringSubmatch(query, -1)
-		for _, term := range quotedTerms {
-			if len(term) > 1 {
-				if searchTerms != "" {
-					searchTerms += " "
-				}
-				searchTerms += term[1]
+			numMatches := numRegex.FindStringSubmatch(numeratorPart)
+			denMatches := denRegex.FindStringSubmatch(denominatorPart)
+
+			if len(numMatches) > 3 && len(denMatches) > 3 {
+				// Build a Datadog query that calculates the ratio
+				return fmt.Sprintf("(logs(\"@app:%s %s\").index(\"*\").rollup(\"count\").last(\"%s\") / logs(\"@app:%s %s\").index(\"*\").rollup(\"count\").last(\"%s\")) > 0.2",
+					numMatches[1], numMatches[2], numMatches[3],
+					denMatches[1], denMatches[2], denMatches[3])
 			}
 		}
-
-		// Handle NOT conditions
-		notCondition := ""
-		notMatch := regexp.MustCompile(`NOT\s+"([^"]+)"`).FindStringSubmatch(query)
-		if len(notMatch) > 1 {
-			notCondition = fmt.Sprintf(" -\"%s\"", notMatch[1])
-			// Remove the NOT term from searchTerms
-			searchTerms = strings.Replace(searchTerms, notMatch[1], "", 1)
-			searchTerms = strings.TrimSpace(searchTerms)
-		}
-
-		// Build Datadog query
-		datadogQuery := fmt.Sprintf("logs(\"%s%s\").index(\"*\").rollup(\"count\").last(\"15m\") > %g",
-			searchTerms,
-			notCondition,
-			threshold)
-
-		return datadogQuery
 	}
 
 	// If we can't parse it, return a default query format
 	return fmt.Sprintf("logs(\"*\").index(\"*\").rollup(\"count\").last(\"15m\") > %g", threshold)
 }
 
-func CreateDatadogAlert(suggestion config.AlertSuggestion, cfg config.Config) error {
+// Update the CreateDatadogAlert function to use this conversion
+func CreateDatadogAlert(alertSuggestion config.AlertSuggestion, cfg config.Config) error {
+	// Extract threshold from description if available
+	threshold := 1.0 // Default threshold
+	thresholdRegex := regexp.MustCompile(`threshold:\s*(\d+(?:\.\d+)?)`)
+	thresholdMatches := thresholdRegex.FindStringSubmatch(alertSuggestion.Description)
+	if len(thresholdMatches) > 1 {
+		parsedThreshold, err := strconv.ParseFloat(thresholdMatches[1], 64)
+		if err != nil {
+			log.Printf("Warning: could not parse threshold value from: %s. Using default threshold of 1.0", thresholdMatches[0])
+		} else {
+			threshold = parsedThreshold
+		}
+	} else {
+		log.Printf("Warning: could not extract threshold value from: %s. Using default threshold of 1.0", alertSuggestion.Description)
+	}
+
+	log.Printf("Creating alert '%s' with threshold value: %f", alertSuggestion.Name, threshold)
+
+	// Log the original query
+	log.Printf("Original query: %s", alertSuggestion.Query)
+
+	// Convert the query to Datadog format
+	query := convertPrometheusToDatadogQuery(alertSuggestion.Query, threshold)
+	log.Printf("Converted query: %s", query)
+
+	// Simple validation - ensure the query isn't empty
+	if query == "" {
+		query = "logs(\"*\").index(\"*\").rollup(\"count\").last(\"15m\") > " + fmt.Sprintf("%g", threshold)
+		log.Printf("Warning: empty query, using default: %s", query)
+	}
+
+	// Initialize Datadog client
 	configuration := datadog.NewConfiguration()
-	configuration.Host = "api.ap1.datadoghq.com"
+	configuration.Host = "api.ap1.datadoghq.com" // Use ap1 for Asia Pacific
 	configuration.AddDefaultHeader("DD-API-KEY", cfg.DatadogAPIKey)
 	configuration.AddDefaultHeader("DD-APPLICATION-KEY", cfg.DatadogAppKey)
-	client := datadog.NewAPIClient(configuration)
+	apiClient := datadog.NewAPIClient(configuration)
 
-	// Parse threshold
-	threshold, err := extractThresholdValue(suggestion.Threshold)
+	// Create monitor options
+	options := &datadog.MonitorOptions{
+		NotifyNoData:      datadog.PtrBool(false),
+		RequireFullWindow: datadog.PtrBool(false),
+		TimeoutH:          *datadog.NewNullableInt64(datadog.PtrInt64(0)),
+	}
+
+	// Create monitor request
+	monitorType := datadog.MONITORTYPE_LOG_ALERT
+	monitorName := alertSuggestion.Name
+	message := fmt.Sprintf("%s\n\nDescription: %s", alertSuggestion.Name, alertSuggestion.Description)
+	monitorRequest := datadog.Monitor{
+		Name:    &monitorName,
+		Type:    monitorType,
+		Query:   query,
+		Message: &message,
+		Options: options,
+	}
+
+	// Create the monitor
+	ctx := context.Background()
+	monitor, resp, err := apiClient.MonitorsApi.CreateMonitor(ctx, monitorRequest)
 	if err != nil {
-		log.Printf("Warning: %v. Using default threshold of 1.0", err)
-		threshold = 1.0
-	}
-
-	// Convert Splunk query to Datadog format
-	datadogQuery := convertSplunkToDatadogQuery(suggestion.Query, threshold)
-
-	log.Printf("Creating alert '%s' with threshold value: %f", suggestion.Name, threshold)
-	log.Printf("Original query: %s", suggestion.Query)
-	log.Printf("Converted query: %s", datadogQuery)
-
-	// Create message with runbook link if available
-	message := suggestion.Description
-	if suggestion.RunbookLink != "" {
-		message += fmt.Sprintf("\n\nRunbook: %s", suggestion.RunbookLink)
-	}
-	if suggestion.Notification != "" {
-		message += fmt.Sprintf("\n\n%s", suggestion.Notification)
-	}
-
-	// Create alert request
-	alertRequest := datadog.Monitor{
-		Name:     &suggestion.Name,
-		Type:     "log alert",
-		Query:    datadogQuery,
-		Message:  &message,
-		Priority: *datadog.NewNullableInt64(utils.Int64Ptr(getPriorityValue(suggestion.Priority))),
-		Options: &datadog.MonitorOptions{
-			NotifyNoData:      utils.BoolPtr(false),
-			RenotifyInterval:  *datadog.NewNullableInt64(utils.Int64Ptr(60)),
-			EvaluationDelay:   *datadog.NewNullableInt64(utils.Int64Ptr(300)),
-			TimeoutH:          *datadog.NewNullableInt64(utils.Int64Ptr(0)),
-			EscalationMessage: utils.StringPtr(fmt.Sprintf("Alert still triggered for %s", suggestion.Name)),
-			Thresholds: &datadog.MonitorThresholds{
-				Critical: &threshold,
-			},
-		},
-		Tags: []string{fmt.Sprintf("type:%s", suggestion.Type), "source:prism", "auto-generated:true"},
-	}
-
-	monitor, resp, err := client.MonitorsApi.CreateMonitor(context.Background(), alertRequest)
-	if err != nil {
-		// Log more detailed error info
 		log.Printf("Error response from Datadog: %v", resp)
 		return fmt.Errorf("failed to create Datadog alert: %w", err)
 	}
-	log.Printf("Monitor created with ID: %d", *monitor.Id)
-	return nil
-}
 
-// getPriorityValue converts string priority to numeric value
-func getPriorityValue(priority string) int64 {
-	switch strings.ToLower(priority) {
-	case "p1", "critical", "high":
-		return 1
-	case "p2", "warning", "medium":
-		return 3
-	case "p3", "low":
-		return 5
-	default:
-		return 3 // Default to medium priority
-	}
+	log.Printf("Successfully created Datadog alert with ID: %d", monitor.GetId())
+	return nil
 }
