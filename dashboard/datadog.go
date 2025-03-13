@@ -13,10 +13,6 @@ import (
 func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Config) error {
 	log.Printf("Creating Datadog dashboard: %s", suggestion.Name)
 
-	// Debug: Print JSON structure
-	log.Printf("Queries JSON: %s", suggestion.Queries)
-	log.Printf("Panels JSON: %s", suggestion.Panels)
-
 	// Initialize Datadog client with the v1 API client
 	configuration := datadog.NewConfiguration()
 	configuration.Host = "api.ap1.datadoghq.com"
@@ -41,7 +37,12 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 
 	// Create widgets from panels
 	widgets := []datadog.Widget{}
-	for _, panel := range panels {
+
+	// Track the current y position for proper row placement
+	currentRowY := int64(0)
+	maxRowHeight := int64(0)
+
+	for i, panel := range panels {
 		// Debug panel structure
 		panelBytes, _ := json.MarshalIndent(panel, "", "  ")
 		log.Printf("Processing panel: %s", string(panelBytes))
@@ -92,7 +93,29 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 		for _, target := range targets {
 			targetMap, ok := target.(map[string]interface{})
 			if !ok {
-				log.Printf("Warning: target type %T is not a map in panel %s, skipping target", target, title)
+				targetStr, ok := target.(string)
+				if !ok {
+					log.Printf("Warning: target type %T is not a map in panel %s, skipping target", target, title)
+					continue
+				}
+
+				// Try to find the referenced query by refId
+				for _, query := range queries {
+					queryRefId, ok := query["refId"].(string)
+					if !ok {
+						continue
+					}
+
+					if queryRefId == targetStr {
+						// Extract the actual query
+						queryExpr, ok := query["query"].(string)
+						if ok {
+							queryStr = queryExpr
+							targetsProcessed = true
+							break
+						}
+					}
+				}
 				continue
 			}
 
@@ -114,10 +137,14 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 					continue
 				}
 
-				queryExpr, ok := query["expr"].(string)
+				queryExpr, ok := query["query"].(string)
 				if !ok {
-					log.Printf("Warning: expr is not a string in query %s, skipping query", queryRefId)
-					continue
+					// Try "expr" as fallback
+					queryExpr, ok = query["expr"].(string)
+					if !ok {
+						log.Printf("Warning: no query expression found in query %s, skipping query", queryRefId)
+						continue
+					}
 				}
 
 				queryStr = queryExpr
@@ -149,21 +176,14 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 		requests = append(requests, request)
 
 		// Extract layout parameters with type checking
-		x, ok := getInt64FromFloat(gridPos, "x")
-		if !ok {
-			log.Printf("Warning: x is not a number in panel %s, using default 0", title)
-			x = 0
-		}
-
-		y, ok := getInt64FromFloat(gridPos, "y")
-		if !ok {
-			log.Printf("Warning: y is not a number in panel %s, using default 0", title)
-			y = 0
-		}
-
 		w, ok := getInt64FromFloat(gridPos, "w")
 		if !ok {
 			log.Printf("Warning: w is not a number in panel %s, using default 12", title)
+			w = 12
+		}
+		// Ensure width doesn't exceed max width of 12
+		if w > 12 {
+			log.Printf("Warning: width %d exceeds maximum 12 in panel %s, capping at 12", w, title)
 			w = 12
 		}
 
@@ -171,6 +191,45 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 		if !ok {
 			log.Printf("Warning: h is not a number in panel %s, using default 8", title)
 			h = 8
+		}
+
+		// Calculate x and y positions for ordered layout
+		// For ordered layout, x should always be 0 for first widget in row
+		// and subsequent widgets in the same row should be positioned next to each other
+		var x int64 = 0
+		var y int64 = currentRowY
+
+		// Check if this panel was meant to be on a new row from its original y value
+		originalY, hasY := getInt64FromFloat(gridPos, "y")
+		originalX, hasX := getInt64FromFloat(gridPos, "x")
+
+		if i > 0 && hasY && hasX {
+			if originalY > currentRowY {
+				// This panel should start a new row
+				currentRowY += maxRowHeight
+				y = currentRowY
+				maxRowHeight = h
+				x = 0
+			} else if originalX > 0 {
+				// This panel should be placed after the previous one in the same row
+				prevWidget := widgets[i-1]
+				x = prevWidget.Layout.X + prevWidget.Layout.Width
+
+				// If adding this widget would exceed max width, move to next row
+				if x+w > 12 {
+					currentRowY += maxRowHeight
+					y = currentRowY
+					x = 0
+					maxRowHeight = h
+				} else if h > maxRowHeight {
+					maxRowHeight = h
+				}
+			}
+		}
+
+		// Update maxRowHeight if this widget is taller
+		if h > maxRowHeight {
+			maxRowHeight = h
 		}
 
 		// Create widget definition
@@ -193,6 +252,8 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 			},
 		}
 		widgets = append(widgets, widget)
+
+		log.Printf("Added widget %s at position x=%d, y=%d with width=%d, height=%d", title, x, y, w, h)
 	}
 
 	// Ensure we have at least one widget
