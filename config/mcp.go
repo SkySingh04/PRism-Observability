@@ -1,4 +1,4 @@
-package mcp
+package config
 
 type MCPRequest struct {
 	ID     string         `json:"id"`

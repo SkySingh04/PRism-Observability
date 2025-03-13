@@ -19,7 +19,7 @@ func RunMCPServer() {
 	encoder := json.NewEncoder(os.Stdout)
 
 	// Handle initial manifest request
-	var req MCPRequest
+	var req config.MCPRequest
 	if err := decoder.Decode(&req); err != nil {
 		log.Printf("Failed to decode initial request: %v", err)
 		log.Println("Check if Cursor is sending the expected MCP format")
@@ -30,15 +30,15 @@ func RunMCPServer() {
 
 	if req.Method == "mcp.manifest" {
 		log.Println("Processing manifest request")
-		manifest := MCPManifest{
+		manifest := config.MCPManifest{
 			Schema:  "mcp-0.7.1",
 			Name:    "prism",
 			Version: "1.0.0",
-			Tools: []MCPTool{
+			Tools: []config.MCPTool{
 				{
 					Name:        "search_repo",
 					Description: "Search repository for relevant code files and information",
-					Parameters: map[string]MCPParam{
+					Parameters: map[string]config.MCPParam{
 						"query": {
 							Type:        "string",
 							Description: "The search query to find relevant code",
@@ -48,7 +48,7 @@ func RunMCPServer() {
 				{
 					Name:        "get_pr_details",
 					Description: "Get details about a specific PR or the current PR",
-					Parameters: map[string]MCPParam{
+					Parameters: map[string]config.MCPParam{
 						"pr_number": {
 							Type:        "integer",
 							Description: "PR number to fetch details for (0 for current PR)",
@@ -58,7 +58,7 @@ func RunMCPServer() {
 			},
 		}
 
-		resp := MCPResponse{
+		resp := config.MCPResponse{
 			ID:     req.ID,
 			Result: map[string]any{"manifest": manifest},
 		}
@@ -70,9 +70,9 @@ func RunMCPServer() {
 		log.Println("Manifest response sent successfully")
 	} else {
 		log.Printf("ERROR: Expected mcp.manifest method but got %s", req.Method)
-		resp := MCPResponse{
+		resp := config.MCPResponse{
 			ID: req.ID,
-			Error: &MCPError{
+			Error: &config.MCPError{
 				Code:    400,
 				Message: fmt.Sprintf("Expected mcp.manifest but got %s", req.Method),
 			},
@@ -92,7 +92,7 @@ func RunMCPServer() {
 
 		log.Printf("Received tool request: Method=%s, ID=%s", req.Method, req.ID)
 
-		var resp MCPResponse
+		var resp config.MCPResponse
 		resp.ID = req.ID
 
 		switch req.Method {
@@ -100,7 +100,7 @@ func RunMCPServer() {
 			query, ok := req.Params["query"].(string)
 			if !ok {
 				log.Println("ERROR: Invalid query parameter")
-				resp.Error = &MCPError{
+				resp.Error = &config.MCPError{
 					Code:    400,
 					Message: "Invalid query parameter",
 				}
@@ -109,7 +109,7 @@ func RunMCPServer() {
 				result, err := handleSearchRepo(query)
 				if err != nil {
 					log.Printf("ERROR in search_repo: %v", err)
-					resp.Error = &MCPError{
+					resp.Error = &config.MCPError{
 						Code:    500,
 						Message: err.Error(),
 					}
@@ -123,7 +123,7 @@ func RunMCPServer() {
 			prNum, ok := req.Params["pr_number"].(float64)
 			if !ok {
 				log.Println("ERROR: Invalid PR number parameter")
-				resp.Error = &MCPError{
+				resp.Error = &config.MCPError{
 					Code:    400,
 					Message: "Invalid PR number parameter",
 				}
@@ -132,7 +132,7 @@ func RunMCPServer() {
 				result, err := handleGetPRDetails(int(prNum))
 				if err != nil {
 					log.Printf("ERROR in get_pr_details: %v", err)
-					resp.Error = &MCPError{
+					resp.Error = &config.MCPError{
 						Code:    500,
 						Message: err.Error(),
 					}
@@ -144,7 +144,7 @@ func RunMCPServer() {
 
 		default:
 			log.Printf("ERROR: Unknown method: %s", req.Method)
-			resp.Error = &MCPError{
+			resp.Error = &config.MCPError{
 				Code:    404,
 				Message: fmt.Sprintf("Unknown method: %s", req.Method),
 			}
