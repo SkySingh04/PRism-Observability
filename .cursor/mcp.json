@@ -1,7 +1,7 @@
 {
     "mcpServers": {
       "prism": {
-        "command": "/Users/akashsingh/Desktop/akASH/prism",
+        "command": "./prism",
         "args": ["chat", "--mcp"],
         "env": {
           "PRISM_VERBOSITY": "info"

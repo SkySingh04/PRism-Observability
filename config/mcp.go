@@ -1,9 +1,10 @@
 package config
 
 type MCPRequest struct {
-	ID     string         `json:"id"`
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	ID      string         `json:"id"`
+	Method  string         `json:"method"`
+	Params  map[string]any `json:"params"`
+	JSONRPC string         `json:"jsonrpc"`
 }
 
 type MCPResponse struct {

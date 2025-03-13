@@ -30,6 +30,7 @@ func RunMCPServer() {
 
 	if req.Method == "mcp.manifest" {
 		log.Println("Processing manifest request")
+		log.Printf("Request details: Method=%s, JSONRPC=%s", req.Method, req.JSONRPC)
 		manifest := config.MCPManifest{
 			Schema:  "mcp-0.7.1",
 			Name:    "prism",
