@@ -273,7 +273,7 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 		// Add action buttons - these will be parsed by the GitHub action
 		commentBody += "<details>\n"
 		commentBody += "<summary>Click to create this dashboard</summary>\n\n"
-		commentBody += fmt.Sprintf("To create this dashboard, comment with:\n\n`prism dashboard --create %s`\n\n", suggestion.Name)
+		commentBody += fmt.Sprintf("To create this dashboard, comment with:\n\n`prism dashboard --create --name %s`\n\n", suggestion.Name)
 		commentBody += fmt.Sprintf("<!-- DASHBOARD_CREATE:%s:%s -->\n", suggestion.Type, suggestion.Name)
 		commentBody += "</details>\n"
 
@@ -372,6 +372,7 @@ func GetDashboardSuggestionsFromPR(client *github.Client, cfg config.Config) (*[
 		cfg.PRNumber,
 		&github.IssueListCommentsOptions{},
 	)
+	log.Println(comments)
 	if err != nil {
 		return nil, fmt.Errorf("error getting PR comments: %v", err)
 	}
@@ -381,13 +382,14 @@ func GetDashboardSuggestionsFromPR(client *github.Client, cfg config.Config) (*[
 		body := comment.GetBody()
 
 		// Look for our dashboard suggestion marker format
-		if strings.Contains(body, "## Dashboard Suggestion:") {
+		if strings.Contains(body, "Dashboard Suggestion") {
 			suggestion := parseDashboardSuggestionFromComment(body)
 			if suggestion != nil {
 				allSuggestions = append(allSuggestions, *suggestion)
 			}
 		}
 	}
+	log.Println(allSuggestions)
 
 	return &allSuggestions, nil
 }
