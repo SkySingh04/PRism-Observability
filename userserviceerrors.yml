@@ -1,0 +1,13 @@
+groups:
+- name: metric
+  rules:
+  - alert: UserServiceErrors
+    expr: 
+    for: 3m
+    labels:
+      severity: p1
+      type: metric
+    annotations:
+      summary: "UserServiceErrors"
+      description: "User service is returning server errors"
+      runbook_url: "[Link to Runbook](https://wiki.example.com/runbooks/user-service-errors)"
