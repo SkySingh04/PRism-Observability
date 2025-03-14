@@ -1,0 +1,13 @@
+groups:
+- name: metric
+  rules:
+  - alert: HighErrorRateInAlertCreation
+    expr: sum(rate(span_count{operation="CreateAlert", status_code="ERROR"}[5m])) / sum(rate(span_count{operation="CreateAlert"}[5m])) > 0.1
+    for: 5m
+    labels:
+      severity: p1
+      type: metric
+    annotations:
+      summary: "HighErrorRateInAlertCreation"
+      description: "Alert creation operations are failing at an elevated rate, indicating potential issues with the alert creation functionality or external alert service APIs."
+      runbook_url: "https://github.com/organization/prism/wiki/alert-creation-failures"

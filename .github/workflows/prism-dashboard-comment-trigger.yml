@@ -1,0 +1,97 @@
+name: PRism Dashboard Comment Trigger
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  dashboard-action:
+    if: github.event.issue.pull_request && (contains(github.event.comment.body, 'prism dashboard') || contains(github.event.comment.body, 'dashboard-create'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          
+      - name: Build PRism
+        run: go build -o prism
+        
+      - name: Parse Dashboard Command
+        id: parse_command
+        run: |
+          COMMENT="${{ github.event.comment.body }}"
+          
+          if [[ "$COMMENT" == *"prism dashboard --create"* ]]; then
+            DASHBOARD_NAME=$(echo "$COMMENT" | sed -n 's/.*prism dashboard --create \([^ ]*\).*/\1/p')
+            echo "command=specific" >> $GITHUB_OUTPUT
+            echo "dashboard_name=$DASHBOARD_NAME" >> $GITHUB_OUTPUT
+          elif [[ "$COMMENT" == *"prism dashboard --create-all"* ]]; then
+            echo "command=all" >> $GITHUB_OUTPUT
+          elif [[ "$COMMENT" == *"dashboard-create"* ]]; then
+            # Parse dashboard info from HTML comment notation
+            DASHBOARD_INFO=$(echo "$COMMENT" | grep -o 'DASHBOARD_CREATE:[^:]*:[^-]*' | head -1)
+            if [[ ! -z "$DASHBOARD_INFO" ]]; then
+              DASHBOARD_TYPE=$(echo "$DASHBOARD_INFO" | cut -d ':' -f 2)
+              DASHBOARD_NAME=$(echo "$DASHBOARD_INFO" | cut -d ':' -f 3)
+              echo "command=specific" >> $GITHUB_OUTPUT
+              echo "dashboard_name=$DASHBOARD_NAME" >> $GITHUB_OUTPUT
+              echo "dashboard_type=$DASHBOARD_TYPE" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "command=none" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Run Dashboard Command
+        if: steps.parse_command.outputs.command != 'none'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GRAFANA_SERVICE_ACCOUNT_TOKEN: ${{ secrets.GRAFANA_SERVICE_ACCOUNT_TOKEN }}
+          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
+        run: |
+          if [[ "${{ steps.parse_command.outputs.command }}" == "specific" ]]; then
+            CMD="./prism dashboard --create --name ${{ steps.parse_command.outputs.dashboard_name }} --skip-prompt"
+            if [[ -n "${{ steps.parse_command.outputs.dashboard_type }}" ]]; then
+              CMD="$CMD --type ${{ steps.parse_command.outputs.dashboard_type }}"
+            fi
+            echo "Running: $CMD"
+            $CMD
+          elif [[ "${{ steps.parse_command.outputs.command }}" == "all" ]]; then
+            echo "Running: ./prism dashboard --create-all --skip-prompt"
+            ./prism dashboard --create-all --skip-prompt
+          fi
+          
+      - name: Comment on PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const command = process.env.GITHUB_OUTPUT_command;
+            let message = '';
+            
+            if (command === 'specific') {
+              const dashboardName = process.env.GITHUB_OUTPUT_dashboard_name;
+              message = `✅ Dashboard creation complete: ${dashboardName}`;
+            } else if (command === 'all') {
+              message = '✅ All dashboards created successfully';
+            }
+            
+            if (message) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+            }

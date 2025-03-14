@@ -1,0 +1,13 @@
+groups:
+- name: metric
+  rules:
+  - alert: PrometheusAlertmanagerConnectionFailure
+    expr: sum(increase(http_request_total{service="prism", target_service="prometheus", status_code=~"5.*|4.*"}[5m])) > 3
+    for: 5m
+    labels:
+      severity: p0
+      type: metric
+    annotations:
+      summary: "PrometheusAlertmanagerConnectionFailure"
+      description: "Multiple failed requests to Prometheus Alertmanager, indicating potential connectivity or authentication issues."
+      runbook_url: "https://github.com/organization/prism/wiki/prometheus-connection-issues"

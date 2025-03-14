@@ -6,94 +6,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"log"
 	"net/http"
-	"path/filepath"
 	"strings"
 )
 
-func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent string) string {
-	var b strings.Builder
+func CallClaudeAPIForObservability(prompt string, configStruct config.Config) (*[]config.FileSuggestion, error, string, string) {
+	log.Printf("Calling Claude API for observability recommendations with model: %s", configStruct.ClaudeModel)
 
-	b.WriteString("# Observability Instrumentation Analysis\n\n")
-	b.WriteString("As an AI observability assistant, analyze the following PR and PRD to suggest code changes for:\n")
-	b.WriteString("1. OpenTelemetry instrumentation (spans, metrics, attributes)\n")
-	b.WriteString("2. Logging statements at appropriate locations\n")
-	b.WriteString("3. Event tracking code (Amplitude)\n\n")
-
-	// Add PR details
-	b.WriteString("## Pull Request Details\n\n")
-	b.WriteString(fmt.Sprintf("Title: %s\n", prDetails["title"]))
-	b.WriteString(fmt.Sprintf("Description: %s\n", prDetails["description"]))
-	b.WriteString(fmt.Sprintf("Author: %s\n", prDetails["author"]))
-	b.WriteString(fmt.Sprintf("Created: %s\n\n", prDetails["created_at"]))
-
-	// Add file diffs
-	files := prDetails["files"].([]map[string]interface{})
-	b.WriteString(fmt.Sprintf("## File Changes (%d files)\n\n", len(files)))
-
-	for _, file := range files {
-		filename := file["filename"].(string)
-		status := file["status"].(string)
-		additions := file["additions"].(int)
-		deletions := file["deletions"].(int)
-		patch := file["patch"].(string)
-
-		// Only include .go files for detailed analysis
-		if filepath.Ext(filename) == ".go" || len(files) < 5 {
-			b.WriteString(fmt.Sprintf("### %s (%s, +%d, -%d)\n\n", filename, status, additions, deletions))
-			b.WriteString("```diff\n")
-			b.WriteString(patch)
-			b.WriteString("\n```\n\n")
-		} else {
-			b.WriteString(fmt.Sprintf("### %s (%s, +%d, -%d) - Diff omitted\n\n", filename, status, additions, deletions))
-		}
-	}
-
-	// Add PRD if provided
-	if prdContent != "" {
-		b.WriteString("## Product Requirements Document\n\n")
-		b.WriteString(prdContent)
-		b.WriteString("\n\n")
-	}
-
-	// Instructions focused only on code instrumentation
-	b.WriteString("## Instructions\n\n")
-	b.WriteString("For each file in the PR, suggest specific code changes as git diff format that can be posted as inline comments. Your suggestions should:\n\n")
-
-	b.WriteString("1. Add OpenTelemetry instrumentation:\n")
-	b.WriteString("   - Create spans for functions/methods\n")
-	b.WriteString("   - Add attributes to spans for context\n")
-	b.WriteString("   - Track errors and set status accordingly\n\n")
-
-	b.WriteString("2. Add appropriate logging:\n")
-	b.WriteString("   - Log entry/exit of important functions\n")
-	b.WriteString("   - Log errors with context\n")
-	b.WriteString("   - Add debug logs for complex operations\n\n")
-
-	b.WriteString("3. Add event tracking where relevant:\n")
-	b.WriteString("   - User actions\n")
-	b.WriteString("   - System events\n")
-	b.WriteString("   - Performance metrics\n\n")
-
-	b.WriteString("Format each suggestion as follows:\n")
-	b.WriteString("```\n")
-	b.WriteString("FILE: filename.go\n")
-	b.WriteString("LINE: 42\n")
-	b.WriteString("SUGGESTION:\n")
-	b.WriteString("```diff\n")
-	b.WriteString("// Add after line 42\n")
-	b.WriteString("+ span := otel.StartSpan(ctx, \"functionName\")\n")
-	b.WriteString("+ defer span.End()\n")
-	b.WriteString("```\n")
-
-	b.WriteString("Follow Go best practices and match the existing code style. Only suggest changes related to observability instrumentation.")
-	b.WriteString("IMPORTANT : Also, provide a summary paragraph of all the suggested changes starting with SUMMARY:, along with the reason for each change and sort them by priority (High, Medium, Low).\n\n")
-
-	return b.String()
-}
-
-func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSuggestion, error, string, string) {
 	// Prepare Claude request
 	claudeReq := config.ClaudeRequest{
 		Model:       configStruct.ClaudeModel,
@@ -110,12 +31,14 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSug
 
 	reqBody, err := json.Marshal(claudeReq)
 	if err != nil {
+		log.Printf("Error marshaling Claude request: %v", err)
 		return nil, fmt.Errorf("error marshaling Claude request: %v", err), "", ""
 	}
 
 	// Create HTTP request
 	req, err := http.NewRequest("POST", configStruct.ClaudeBaseURL, bytes.NewBuffer(reqBody))
 	if err != nil {
+		log.Printf("Error creating HTTP request: %v", err)
 		return nil, fmt.Errorf("error creating HTTP request: %v", err), "", ""
 	}
 
@@ -124,26 +47,33 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSug
 	req.Header.Set("anthropic-version", "2023-06-01")
 
 	// Execute request
+	log.Print("Sending request to Claude API")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("Error executing HTTP request: %v", err)
 		return nil, fmt.Errorf("error executing HTTP request: %v", err), "", ""
 	}
 	defer resp.Body.Close()
 
 	// Read response
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("Error reading response body: %v", err)
 		return nil, fmt.Errorf("error reading response body: %v", err), "", ""
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("Received non-200 status code from Claude API: %d", resp.StatusCode)
 		return nil, fmt.Errorf("error from Claude API: %s", string(body)), "", ""
 	}
+
+	log.Print("Successfully received response from Claude API")
 
 	// Parse Claude response
 	var claudeResp config.ClaudeResponse
 	if err := json.Unmarshal(body, &claudeResp); err != nil {
+		log.Printf("Error parsing Claude response: %v", err)
 		return nil, fmt.Errorf("error parsing Claude response: %v", err), "", ""
 	}
 
@@ -155,22 +85,271 @@ func CallClaudeAPI(prompt string, configStruct config.Config) (*[]config.FileSug
 		}
 	}
 
-	// // Check if response is LGTM
-	// if strings.Contains(responseText, "LGTM") {
-	// 	// Return empty recommendations for LGTM case
-	// 	return &config.ObservabilityRecommendation{}, nil, responseText
-	// }
-
 	// Parse suggestions for PR comments
-	suggestions, err := utils.ParseLLMSuggestions(responseText)
+	log.Print("Parsing LLM suggestions for observability")
+	suggestions, err := utils.ParseLLMSuggestionsForObservability(responseText)
 	if err != nil {
+		log.Printf("Error parsing suggestions: %v", err)
 		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText, ""
 	}
 
+	log.Print("Parsing LLM summary")
 	summary, err := utils.ParseLLMSummary(responseText)
 	if err != nil {
+		log.Printf("Error parsing summary: %v", err)
 		return nil, fmt.Errorf("error parsing summary: %v", err), responseText, ""
 	}
 
+	log.Printf("Successfully processed Claude API response. Found %d suggestions", len(suggestions))
 	return &suggestions, nil, responseText, summary
+}
+
+func CallClaudeAPIForDashboards(prompt string, configStruct config.Config) (*[]config.DashboardSuggestion, error, string, string) {
+	log.Printf("Calling Claude API for dashboard recommendations with model: %s", configStruct.ClaudeModel)
+
+	// Prepare Claude request
+	claudeReq := config.ClaudeRequest{
+		Model:       configStruct.ClaudeModel,
+		MaxTokens:   4000,
+		Temperature: 0.3,
+		Messages: []config.Message{
+			{
+				Role:    "user",
+				Content: prompt,
+			},
+		},
+		System: "You are an AI observability assistant that analyzes Go code changes and PRDs to suggest event tracking, alerting rules, and dashboards. Provide specific, actionable recommendations that follow observability best practices. Your recommendations should be relevant to the changes and detailed enough to implement.",
+	}
+
+	reqBody, err := json.Marshal(claudeReq)
+	if err != nil {
+		log.Printf("Error marshaling Claude request: %v", err)
+		return nil, fmt.Errorf("error marshaling Claude request: %v", err), "", ""
+	}
+
+	// Create HTTP request
+	req, err := http.NewRequest("POST", configStruct.ClaudeBaseURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		log.Printf("Error creating HTTP request: %v", err)
+		return nil, fmt.Errorf("error creating HTTP request: %v", err), "", ""
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", configStruct.ClaudeAPIKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
+
+	// Execute request
+	log.Print("Sending request to Claude API")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error executing HTTP request: %v", err)
+		return nil, fmt.Errorf("error executing HTTP request: %v", err), "", ""
+	}
+	defer resp.Body.Close()
+
+	// Read response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response body: %v", err)
+		return nil, fmt.Errorf("error reading response body: %v", err), "", ""
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Received non-200 status code from Claude API: %d", resp.StatusCode)
+		return nil, fmt.Errorf("error from Claude API: %s", string(body)), "", ""
+	}
+
+	log.Print("Successfully received response from Claude API")
+
+	// Parse Claude response
+	var claudeResp config.ClaudeResponse
+	if err := json.Unmarshal(body, &claudeResp); err != nil {
+		log.Printf("Error parsing Claude response: %v", err)
+		return nil, fmt.Errorf("error parsing Claude response: %v", err), "", ""
+	}
+
+	// Extract text from the array of content
+	var responseText string
+	for _, content := range claudeResp.Content {
+		if content.Type == "text" {
+			responseText += content.Text
+		}
+	}
+
+	// Parse suggestions for PR comments
+	log.Print("Parsing LLM suggestions for dashboards")
+	suggestions, err := utils.ParseLLMSuggestionsForDashboards(responseText)
+	if err != nil {
+		log.Printf("Error parsing suggestions: %v", err)
+		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText, ""
+	}
+
+	log.Printf("Successfully processed Claude API response. Found %d dashboard suggestions", len(suggestions))
+	return &suggestions, nil, responseText, ""
+}
+
+func CallClaudeAPIForAlerts(prompt string, configStruct config.Config) (*[]config.AlertSuggestion, error, string) {
+	log.Printf("Calling Claude API for alert recommendations with model: %s", configStruct.ClaudeModel)
+
+	// Prepare Claude request
+	claudeReq := config.ClaudeRequest{
+		Model:       configStruct.ClaudeModel,
+		MaxTokens:   4000,
+		Temperature: 0.3,
+		Messages: []config.Message{
+			{
+				Role:    "user",
+				Content: prompt,
+			},
+		},
+		System: "You are an AI observability assistant that analyzes Go code changes and PRDs to suggest event tracking, alerting rules, and dashboards. Provide specific, actionable recommendations that follow observability best practices. Your recommendations should be relevant to the changes and detailed enough to implement.",
+	}
+
+	reqBody, err := json.Marshal(claudeReq)
+	if err != nil {
+		log.Printf("Error marshaling Claude request: %v", err)
+		return nil, fmt.Errorf("error marshaling Claude request: %v", err), ""
+	}
+
+	// Create HTTP request
+	req, err := http.NewRequest("POST", configStruct.ClaudeBaseURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		log.Printf("Error creating HTTP request: %v", err)
+		return nil, fmt.Errorf("error creating HTTP request: %v", err), ""
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", configStruct.ClaudeAPIKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
+
+	// Execute request
+	log.Print("Sending request to Claude API")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error executing HTTP request: %v", err)
+		return nil, fmt.Errorf("error executing HTTP request: %v", err), ""
+	}
+	defer resp.Body.Close()
+
+	// Read response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response body: %v", err)
+		return nil, fmt.Errorf("error reading response body: %v", err), ""
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Received non-200 status code from Claude API: %d", resp.StatusCode)
+		return nil, fmt.Errorf("error from Claude API: %s", string(body)), ""
+	}
+
+	log.Print("Successfully received response from Claude API")
+
+	// Parse Claude response
+	var claudeResp config.ClaudeResponse
+	if err := json.Unmarshal(body, &claudeResp); err != nil {
+		log.Printf("Error parsing Claude response: %v", err)
+		return nil, fmt.Errorf("error parsing Claude response: %v", err), ""
+	}
+
+	// Extract text from the array of content
+	var responseText string
+	for _, content := range claudeResp.Content {
+		if content.Type == "text" {
+			responseText += content.Text
+		}
+	}
+
+	// Parse suggestions for PR comments
+	log.Print("Parsing LLM suggestions for alerts")
+	suggestions, err := utils.ParseLLMSuggestionsForAlerts(responseText)
+	if err != nil {
+		log.Printf("Error parsing suggestions: %v", err)
+		return nil, fmt.Errorf("error parsing suggestions: %v", err), responseText
+	}
+
+	log.Printf("Successfully processed Claude API response. Found %d alert suggestions", len(suggestions))
+	return &suggestions, nil, responseText
+}
+
+// SimpleClaudeChat sends the prompt to Claude API and returns the response
+func SimpleClaudeChat(prompt string, cfg config.Config) (string, error) {
+	log.Printf("Starting simple chat with Claude using model: claude-3-7-sonnet-20250219")
+
+	// Prepare request body
+	requestBody := map[string]interface{}{
+		"model":       "claude-3-7-sonnet-20250219",
+		"max_tokens":  1024,
+		"temperature": 0.7,
+		"messages": []map[string]string{
+			{
+				"role":    "user",
+				"content": prompt,
+			},
+		},
+	}
+
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		log.Printf("Error marshaling request: %v", err)
+		return "", fmt.Errorf("error marshaling request: %v", err)
+	}
+
+	// Create request
+	req, err := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		log.Printf("Error creating request: %v", err)
+		return "", fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", cfg.ClaudeAPIKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
+
+	// Send request
+	log.Print("Sending request to Claude API")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending request: %v", err)
+		return "", fmt.Errorf("error sending request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Handle error responses
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("Received non-200 status code from Claude API: %d", resp.StatusCode)
+		return "", fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	log.Print("Successfully received response from Claude API")
+
+	// Parse response
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Printf("Error decoding response: %v", err)
+		return "", fmt.Errorf("error decoding response: %v", err)
+	}
+
+	// Extract content
+	content := ""
+	if messages, ok := result["content"].([]interface{}); ok && len(messages) > 0 {
+		if message, ok := messages[0].(map[string]interface{}); ok {
+			if text, ok := message["text"].(string); ok {
+				content = strings.TrimSpace(text)
+			}
+		}
+	}
+
+	if content == "" {
+		log.Print("Could not extract content from response")
+		return "", fmt.Errorf("could not extract content from response")
+	}
+
+	log.Print("Successfully extracted content from Claude API response")
+	return content, nil
 }

@@ -1,17 +1,71 @@
 package config
 
+import (
+	"log"
+
+	"github.com/spf13/viper"
+)
+
+func LoadConfig() Config {
+	cfg := Config{
+		GithubToken:                viper.GetString("github_token"),
+		ClaudeAPIKey:               viper.GetString("claude_api_key"),
+		RepoOwner:                  viper.GetString("repo_owner"),
+		RepoName:                   viper.GetString("repo_name"),
+		PRNumber:                   viper.GetInt("pr_number"),
+		PRDFilePath:                viper.GetString("prd_file"),
+		OutputFormat:               viper.GetString("output_format"),
+		MaxDiffSize:                viper.GetInt("max_diff_size"),
+		ClaudeModel:                viper.GetString("claude_model"),
+		ClaudeBaseURL:              viper.GetString("claude_base_url"),
+		AmplitudeSecretKey:         viper.GetString("amplitude_secret_key"),
+		AmplitudeAPIKey:            viper.GetString("amplitude_api_key"),
+		AmplitudeAPIToken:          viper.GetString("amplitude_api_token"),
+		GrafanaServiceAccountToken: viper.GetString("grafana_service_account_token"),
+		GrafanaURL:                 viper.GetString("grafana_url"),
+		PrometheusAlertmanagerURL:  viper.GetString("prometheus_alertmanager_url"),
+		PrometheusConfigPath:       viper.GetString("prometheus_config_path"),
+		PrometheusAuthToken:        viper.GetString("prometheus_auth_token"),
+		DatadogAPIKey:              viper.GetString("datadog_api_key"),
+		DatadogAppKey:              viper.GetString("datadog_app_key"),
+	}
+
+	// Validate required parameters
+	if cfg.GithubToken == "" {
+		log.Fatal("GitHub token is required. Set GITHUB_TOKEN env var or use --github-token flag")
+	}
+	if cfg.ClaudeAPIKey == "" {
+		log.Fatal("Claude API key is required. Set CLAUDE_API_KEY env var or use --claude-api-key flag")
+	}
+	if cfg.RepoOwner == "" || cfg.RepoName == "" || cfg.PRNumber == 0 {
+		log.Fatal("Repository details and PR number are required. Set REPO_OWNER, REPO_NAME, PR_NUMBER env vars or use flags")
+	}
+
+	return cfg
+}
+
 // Config holds configuration for the application
 type Config struct {
-	GithubToken   string
-	ClaudeAPIKey  string
-	RepoOwner     string
-	RepoName      string
-	PRNumber      int
-	PRDFilePath   string
-	OutputFormat  string
-	MaxDiffSize   int
-	ClaudeModel   string
-	ClaudeBaseURL string
+	GithubToken                string
+	ClaudeAPIKey               string
+	RepoOwner                  string
+	RepoName                   string
+	PRNumber                   int
+	PRDFilePath                string
+	OutputFormat               string
+	MaxDiffSize                int
+	ClaudeModel                string
+	ClaudeBaseURL              string
+	GrafanaServiceAccountToken string
+	GrafanaURL                 string
+	AmplitudeAPIKey            string
+	AmplitudeSecretKey         string
+	AmplitudeAPIToken          string
+	PrometheusAlertmanagerURL  string
+	PrometheusAuthToken        string
+	DatadogAPIKey              string
+	DatadogAppKey              string
+	PrometheusConfigPath       string
 }
 
 // ObservabilityRecommendation represents the recommendations from Claude
@@ -81,4 +135,33 @@ type FileSuggestion struct {
 	FileName string
 	LineNum  string
 	Content  string
+}
+
+// Example DashboardSuggestion struct for the config package
+type DashboardSuggestion struct {
+	Name     string
+	Type     string
+	Priority string
+	Queries  string
+	Panels   string
+	Alerts   string
+}
+
+type AlertSuggestion struct {
+	Name         string
+	Type         string
+	Priority     string
+	Query        string
+	Description  string
+	Threshold    string
+	Duration     string
+	Notification string
+	RunbookLink  string
+}
+
+// CodeEmbedding represents an embedding for a code file
+type CodeEmbedding struct {
+	FilePath  string    `json:"file_path"`
+	Content   string    `json:"content"`
+	Embedding []float32 `json:"embedding"`
 }
