@@ -168,7 +168,6 @@ func createSpecificDashboard(cfg config.Config, name string, dashboardType strin
 		log.Fatalf("No dashboard found with name: %s", name)
 	}
 
-	// Create the dashboard
 	log.Printf("Creating %s dashboard: %s", targetSuggestion.Type, targetSuggestion.Name)
 	err = createDashboard(targetSuggestion, cfg)
 	if err != nil {
