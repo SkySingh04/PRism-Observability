@@ -66,13 +66,13 @@ jobs:
         run: |
           if [[ "$COMMAND_TYPE" == "specific" ]]; then
             echo "Creating specific alert: $ALERT_NAME"
-            ./prism alert --create --name "$ALERT_NAME" --running-in-ci 
+            ./prism alerts --create --name "$ALERT_NAME" --running-in-ci 
           elif [[ "$COMMAND_TYPE" == "from_comment" ]]; then
-            echo "Creating alert from comment: $ALERT_TYPE - $ALERT_NAME" 
-            ./prism alert --create --name "$ALERT_NAME" --type "$ALERT_TYPE" --running-in-ci
+            echo "Creating alert from comment: $ALERT_TYPE - $ALERT_NAME"
+            ./prism alerts --create --name "$ALERT_NAME" --type "$ALERT_TYPE" --running-in-ci
           else
             echo "Creating all suggested alerts"
-            ./prism alert --create-all --running-in-ci
+            ./prism alerts --create-all --running-in-ci
           fi
       
       - name: Comment on PR
