@@ -5,6 +5,8 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches: [ main, master ]
+  workflow_dispatch:
+    
 
 permissions:
   pull-requests: write
