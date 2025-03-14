@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// checkCmd represents the check command
 var checkCmd = &cobra.Command{
 	Use:   "check",
 	Short: "Check a pull request for observability issues",
