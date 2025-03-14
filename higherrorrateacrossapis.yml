@@ -1,0 +1,13 @@
+groups:
+- name: metric
+  rules:
+  - alert: HighErrorRateAcrossAPIs
+    expr: 
+    for: 5m
+    labels:
+      severity: p0
+      type: metric
+    annotations:
+      summary: "HighErrorRateAcrossAPIs"
+      description: "High rate of 5xx errors across all API endpoints"
+      runbook_url: "[Link to Runbook](https://wiki.example.com/runbooks/high-error-rate)"
