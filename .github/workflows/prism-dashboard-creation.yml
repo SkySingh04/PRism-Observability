@@ -32,7 +32,7 @@ jobs:
           COMMENT="${{ github.event.comment.body }}"
           
           # Check for specific dashboard creation commands
-          if [[ "$COMMENT" == *"prism dashboard --create"* ]]; then
+          if [[ "$COMMENT" == *"prism dashboard --create --name"* ]]; then
             # Extract dashboard name
             DASHBOARD_NAME=$(echo "$COMMENT" | sed -n 's/.*prism dashboard --create \(.*\)/\1/p')
             echo "command=specific" >> $GITHUB_OUTPUT
