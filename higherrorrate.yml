@@ -1,0 +1,13 @@
+groups:
+- name: metric
+  rules:
+  - alert: HighErrorRate
+    expr: 
+    for: 5m
+    labels:
+      severity: p0
+      type: metric
+    annotations:
+      summary: "HighErrorRate"
+      description: "High rate of 5xx errors detected across the application"
+      runbook_url: "[Link to Runbook](https://wiki.example.com/runbooks/high-error-rate)"
