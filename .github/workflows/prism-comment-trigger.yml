@@ -30,7 +30,7 @@ jobs:
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           
       - name: Run PRism Check
-        if: contains(github.event.comment.body, 'prism check')
+        if: github.event.comment.body == 'prism check'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -44,7 +44,7 @@ jobs:
         run: ./prism check
         
       - name: Run PRism Dashboard
-        if: contains(github.event.comment.body, 'prism dashboard')
+        if : github.event.comment.body == 'prism dashboard'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -58,7 +58,7 @@ jobs:
         run: ./prism dashboard
         
       - name: Run PRism Alerts
-        if: contains(github.event.comment.body, 'prism alerts')
+        if: github.event.comment.body == 'prism alerts'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
