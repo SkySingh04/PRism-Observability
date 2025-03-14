@@ -71,6 +71,16 @@ func runDashboard() {
 		return
 	}
 
+	if createAllFlag {
+		log.Println("Creating all suggested dashboards...")
+		// First load saved suggestions, similar to createSpecificDashboard
+		savedSuggestions, err := loadSavedDashboardSuggestions(cfg)
+		if err != nil || savedSuggestions == nil || len(*savedSuggestions) == 0 {
+			log.Fatalf("No saved dashboard suggestions found for PR #%d", cfg.PRNumber)
+		}
+		createAllDashboards(*savedSuggestions, cfg)
+		return
+	}
 	// Read PRD content if provided
 	prdContent := ""
 	if cfg.PRDFilePath != "" {
@@ -117,13 +127,6 @@ func runDashboard() {
 	}
 	log.Println("Successfully created PR comments")
 
-	// Check if we should create all dashboards
-	if createAllFlag {
-		log.Println("Creating all suggested dashboards...")
-		createAllDashboards(*suggestions, cfg)
-		return
-	}
-
 	// Interactive prompt if not in CI/CD mode
 	if !skipPromptFlag {
 		reader := bufio.NewReader(os.Stdin)
@@ -165,7 +168,6 @@ func createSpecificDashboard(cfg config.Config, name string, dashboardType strin
 		log.Fatalf("No dashboard found with name: %s", name)
 	}
 
-	// Create the dashboard
 	log.Printf("Creating %s dashboard: %s", targetSuggestion.Type, targetSuggestion.Name)
 	err = createDashboard(targetSuggestion, cfg)
 	if err != nil {

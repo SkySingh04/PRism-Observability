@@ -66,10 +66,10 @@ jobs:
         run: |
           if [[ "$COMMAND_TYPE" == "specific" ]]; then
             echo "Creating specific dashboard: $DASHBOARD_NAME"
-            ./prism dashboard --create "$DASHBOARD_NAME"
+            ./prism dashboard --create --name "$DASHBOARD_NAME"
           elif [[ "$COMMAND_TYPE" == "from_comment" ]]; then
             echo "Creating dashboard from comment: $DASHBOARD_TYPE - $DASHBOARD_NAME"
-            ./prism dashboard --create "$DASHBOARD_NAME" --type "$DASHBOARD_TYPE"
+            ./prism dashboard --create --name "$DASHBOARD_NAME" --type "$DASHBOARD_TYPE"
           else
             echo "Creating all suggested dashboards"
             ./prism dashboard --create-all
