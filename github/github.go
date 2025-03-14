@@ -42,6 +42,7 @@ func FetchPRDetails(client *github.Client, config config.Config) (config.Config,
 	result["author"] = pr.GetUser().GetLogin()
 	result["created_at"] = pr.GetCreatedAt().Format(time.RFC3339)
 	config.PRBranch = pr.GetHead().GetRef()
+	log.Println("PR branch:", config.PRBranch)
 
 	// Fetch PR diff
 	opt := &github.ListOptions{}
