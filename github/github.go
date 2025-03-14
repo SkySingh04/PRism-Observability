@@ -273,7 +273,7 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 		// Add action buttons - these will be parsed by the GitHub action
 		commentBody += "<details>\n"
 		commentBody += "<summary>Click to create this dashboard</summary>\n\n"
-		commentBody += fmt.Sprintf("To create this dashboard, comment with:\n\n`prism dashboard --create --name %s`\n\n", suggestion.Name)
+		commentBody += fmt.Sprintf("To create this dashboard, comment with:\n\n`prism dashboard --create  %s`\n\n", suggestion.Name)
 		commentBody += fmt.Sprintf("<!-- DASHBOARD_CREATE:%s:%s -->\n", suggestion.Type, suggestion.Name)
 		commentBody += "</details>\n"
 
