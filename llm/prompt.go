@@ -3,7 +3,6 @@ package llm
 import (
 	"fmt"
 	"log"
-	"path/filepath"
 	"strings"
 )
 
@@ -36,18 +35,11 @@ func BuildObservabilityPrompt(prDetails map[string]interface{}, prdContent strin
 		additions := file["additions"].(int)
 		deletions := file["deletions"].(int)
 		patch := file["patch"].(string)
-
-		// Only include .go files for detailed analysis
-		if filepath.Ext(filename) == ".go" || len(files) < 5 {
-			log.Printf("Including full diff for file: %s", filename)
-			b.WriteString(fmt.Sprintf("### %s (%s, +%d, -%d)\n\n", filename, status, additions, deletions))
-			b.WriteString("```diff\n")
-			b.WriteString(patch)
-			b.WriteString("\n```\n\n")
-		} else {
-			log.Printf("Omitting diff for file: %s", filename)
-			b.WriteString(fmt.Sprintf("### %s (%s, +%d, -%d) - Diff omitted\n\n", filename, status, additions, deletions))
-		}
+		log.Printf("Including full diff for file: %s", filename)
+		b.WriteString(fmt.Sprintf("### %s (%s, +%d, -%d)\n\n", filename, status, additions, deletions))
+		b.WriteString("```diff\n")
+		b.WriteString(patch)
+		b.WriteString("\n```\n\n")
 	}
 
 	// Add PRD if provided
