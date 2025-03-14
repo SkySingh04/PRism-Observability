@@ -1,5 +1,11 @@
-name: PRism PR Trigger
+name: PRism TEst
+
 on: issue_comment
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: read 
 
 jobs:
   pr_commented:
