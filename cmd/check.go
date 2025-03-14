@@ -17,7 +17,7 @@ var checkCmd = &cobra.Command{
 	Use:   "check",
 	Short: "Check a pull request for observability issues",
 	Long: `Analyzes a GitHub pull request using Claude AI to identify 
-potential observability issues and suggests improvements.`,
+potential observability issues and suggests improvements. `,
 	Run: func(cmd *cobra.Command, args []string) {
 		runCheck()
 	},
