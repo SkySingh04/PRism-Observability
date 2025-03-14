@@ -28,6 +28,8 @@ func LoadConfig() Config {
 		PrometheusAuthToken:        viper.GetString("prometheus_auth_token"),
 		DatadogAPIKey:              viper.GetString("datadog_api_key"),
 		DatadogAppKey:              viper.GetString("datadog_app_key"),
+		PRBranch:                   viper.GetString("pr_branch"),
+		RunningInCI:                viper.GetBool("running_in_ci"),
 	}
 
 	// Validate required parameters

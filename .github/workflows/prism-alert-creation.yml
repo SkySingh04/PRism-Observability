@@ -63,6 +63,7 @@ jobs:
           ALERT_NAME: ${{ steps.parse_comment.outputs.alert }}
           ALERT_TYPE: ${{ steps.parse_comment.outputs.alert_type }}
           COMMAND_TYPE: ${{ steps.parse_comment.outputs.command }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           if [[ "$COMMAND_TYPE" == "specific" ]]; then
             echo "Creating specific alert: $ALERT_NAME"
