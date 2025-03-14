@@ -3,6 +3,10 @@ name: PRism Comment Trigger
 on:
   issue_comment:
     types: [created]
+permissions:
+  pull-requests: write
+  contents: read
+  issues: read
 
 jobs:
   analyze:
