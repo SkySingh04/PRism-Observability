@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/v53/github"
@@ -271,6 +273,7 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 		// Add action buttons - these will be parsed by the GitHub action
 		commentBody += "<details>\n"
 		commentBody += "<summary>Click to create this dashboard</summary>\n\n"
+		commentBody += fmt.Sprintf("To create this dashboard, comment with:\n\n`prism dashboard --create %s`\n\n", suggestion.Name)
 		commentBody += fmt.Sprintf("<!-- DASHBOARD_CREATE:%s:%s -->\n", suggestion.Type, suggestion.Name)
 		commentBody += "</details>\n"
 
@@ -284,6 +287,20 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 			log.Printf("Error posting dashboard comment: %v", err)
 			return fmt.Errorf("error posting dashboard comment: %v", err)
 		}
+	}
+
+	// Add a comment for creating all dashboards at once
+	allDashboardsComment := "## Create All Dashboards\n\n"
+	allDashboardsComment += "To create all suggested dashboards, comment with:\n\n`prism dashboard --create-all`\n\n"
+
+	issueComment := &github.IssueComment{
+		Body: github.String(allDashboardsComment),
+	}
+
+	_, _, err := client.Issues.CreateComment(ctx, configStruct.RepoOwner, configStruct.RepoName, configStruct.PRNumber, issueComment)
+	if err != nil {
+		log.Printf("Error posting all dashboards comment: %v", err)
+		return fmt.Errorf("error posting all dashboards comment: %v", err)
 	}
 
 	log.Printf("Successfully created all dashboard PR comments")
@@ -341,4 +358,89 @@ func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[
 
 	log.Printf("Successfully created all alert PR comments")
 	return nil
+}
+
+func GetDashboardSuggestionsFromPR(client *github.Client, cfg config.Config) (*[]config.DashboardSuggestion, error) {
+	ctx := context.Background()
+	var allSuggestions []config.DashboardSuggestion
+
+	// Get all comments on the PR
+	comments, _, err := client.Issues.ListComments(
+		ctx,
+		cfg.RepoOwner,
+		cfg.RepoName,
+		cfg.PRNumber,
+		&github.IssueListCommentsOptions{},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error getting PR comments: %v", err)
+	}
+
+	// Process each comment to find dashboard suggestions
+	for _, comment := range comments {
+		body := comment.GetBody()
+
+		// Look for our dashboard suggestion marker format
+		if strings.Contains(body, "## Dashboard Suggestion:") {
+			suggestion := parseDashboardSuggestionFromComment(body)
+			if suggestion != nil {
+				allSuggestions = append(allSuggestions, *suggestion)
+			}
+		}
+	}
+
+	return &allSuggestions, nil
+}
+
+func parseDashboardSuggestionFromComment(commentBody string) *config.DashboardSuggestion {
+	// Extract name from the title line
+	nameMatch := regexp.MustCompile(`## Dashboard Suggestion: (.+)`).FindStringSubmatch(commentBody)
+	if len(nameMatch) < 2 {
+		return nil
+	}
+	name := strings.TrimSpace(nameMatch[1])
+
+	// Extract type
+	typeMatch := regexp.MustCompile(`\*\*Type:\*\* (.+)`).FindStringSubmatch(commentBody)
+	if len(typeMatch) < 2 {
+		return nil
+	}
+	dashboardType := strings.TrimSpace(typeMatch[1])
+
+	// Extract priority
+	priorityMatch := regexp.MustCompile(`\*\*Priority:\*\* (.+)`).FindStringSubmatch(commentBody)
+	priority := "medium" // Default
+	if len(priorityMatch) >= 2 {
+		priority = strings.TrimSpace(priorityMatch[1])
+	}
+
+	// Extract queries
+	queriesMatch := regexp.MustCompile(`### Queries\n` + "```json\n" + `([\s\S]*?)\n` + "```").FindStringSubmatch(commentBody)
+	queries := ""
+	if len(queriesMatch) >= 2 {
+		queries = queriesMatch[1]
+	}
+
+	// Extract panels
+	panelsMatch := regexp.MustCompile(`### Panels\n` + "```json\n" + `([\s\S]*?)\n` + "```").FindStringSubmatch(commentBody)
+	panels := ""
+	if len(panelsMatch) >= 2 {
+		panels = panelsMatch[1]
+	}
+
+	// Extract alerts
+	alertsMatch := regexp.MustCompile(`### Alerts\n` + "```json\n" + `([\s\S]*?)\n` + "```").FindStringSubmatch(commentBody)
+	alerts := ""
+	if len(alertsMatch) >= 2 {
+		alerts = alertsMatch[1]
+	}
+
+	return &config.DashboardSuggestion{
+		Name:     name,
+		Type:     dashboardType,
+		Priority: priority,
+		Queries:  queries,
+		Panels:   panels,
+		Alerts:   alerts,
+	}
 }

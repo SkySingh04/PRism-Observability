@@ -319,13 +319,6 @@ func BuildAlertsPrompt(prDetails map[string]interface{}, prdContent string) stri
 	b.WriteString("NOTIFICATION: [Where alert should be sent, e.g. slack-sre-channel]\n")
 	b.WriteString("RUNBOOK_LINK: [Link to runbook or troubleshooting guide]\n\n")
 
-	b.WriteString("When suggesting alert queries, use this exact format:\n")
-	b.WriteString("- For simple count alerts: `count({job=\"prism\"} |= \"ERROR_PATTERN\" [TIME_WINDOW]) > X`\n")
-	b.WriteString("- For ratio alerts: `sum(count_over_time({job=\"prism\"} |= \"ERROR_PATTERN\" [TIME_WINDOW])) / sum(count_over_time({job=\"prism\"} |= \"TOTAL_PATTERN\" [TIME_WINDOW])) > X.Y`\n")
-	b.WriteString("- Use explicit time windows: 5m, 15m, 1h\n")
-	b.WriteString("- Include exact threshold values in the query\n")
-	b.WriteString("- Use |= for exact matches and |=~ for regex patterns\n")
-
 	log.Print("Adding alert guidelines")
 	b.WriteString("IMPORTANT GUIDELINES:\n")
 	b.WriteString("1. Only suggest alerts based on telemetry data present in the code\n")

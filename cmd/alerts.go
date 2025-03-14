@@ -102,7 +102,7 @@ func runAlerts() {
 		if input == "y" || input == "yes" {
 			log.Println("INFO: Creating alerts...")
 			for _, suggestion := range *suggestions {
-				if suggestion.Type == "prometheus" || suggestion.Type == "metric" || suggestion.Type == "log" {
+				if suggestion.Type == "prometheus" || suggestion.Type == "metric" {
 					log.Printf("INFO: Creating Prometheus alert '%s'...", suggestion.Name)
 					err := alerts.CreatePrometheusAlert(suggestion, cfg)
 					if err != nil {
