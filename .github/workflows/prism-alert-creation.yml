@@ -63,20 +63,19 @@ jobs:
           ALERT_NAME: ${{ steps.parse_comment.outputs.alert }}
           ALERT_TYPE: ${{ steps.parse_comment.outputs.alert_type }}
           COMMAND_TYPE: ${{ steps.parse_comment.outputs.command }}
-          PR_BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
           if [[ "$COMMAND_TYPE" == "specific" ]]; then
             echo "Creating specific alert: $ALERT_NAME"
             echo "Creating alert on branch: $PR_BRANCH"
-            ./prism alerts --create --name "$ALERT_NAME" --running-in-ci --pr-branch "$PR_BRANCH"
+            ./prism alerts --create --name "$ALERT_NAME" --running-in-ci 
           elif [[ "$COMMAND_TYPE" == "from_comment" ]]; then
             echo "Creating alert from comment: $ALERT_TYPE - $ALERT_NAME"
             echo "Creating alert on branch: $PR_BRANCH"
-            ./prism alerts --create --name "$ALERT_NAME" --type "$ALERT_TYPE" --running-in-ci --pr-branch "$PR_BRANCH"
+            ./prism alerts --create --name "$ALERT_NAME" --type "$ALERT_TYPE" --running-in-ci 
           else
             echo "Creating all suggested alerts"
             echo "Creating alert on branch: $PR_BRANCH"
-            ./prism alerts --create-all --running-in-ci --pr-branch "$PR_BRANCH"
+            ./prism alerts --create-all --running-in-ci 
           fi
       
       - name: Comment on PR

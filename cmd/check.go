@@ -38,7 +38,7 @@ func runCheck() {
 
 	// Fetch PR details including diff
 	log.Printf("INFO: Fetching PR details for PR #%d...", cfg.PRNumber)
-	prDetails, err := github.FetchPRDetails(githubClient, cfg)
+	cfg, prDetails, err := github.FetchPRDetails(githubClient, cfg)
 	if err != nil {
 		log.Fatalf("ERROR: Failed to fetch PR details: %v", err)
 	}

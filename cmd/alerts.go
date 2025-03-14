@@ -23,7 +23,6 @@ var (
 	alertType           string
 	skipAlertPromptFlag bool
 	runningInCIFlag     bool
-	prBranchFlag        string
 )
 
 var alertsCmd = &cobra.Command{
@@ -45,7 +44,6 @@ func init() {
 	alertsCmd.Flags().StringVar(&alertType, "type", "", "Type of alert (prometheus, datadog)")
 	alertsCmd.Flags().BoolVar(&skipAlertPromptFlag, "skip-prompt", false, "Skip interactive prompts (for CI/CD)")
 	alertsCmd.Flags().BoolVar(&runningInCIFlag, "running-in-ci", false, "Specify if tool is running in CI")
-	alertsCmd.Flags().StringVar(&prBranchFlag, "pr-branch", "main", "Branch to create alerts on")
 
 }
 
@@ -55,8 +53,6 @@ func runAlerts() {
 
 	cfg.RunningInCI = runningInCIFlag
 
-	cfg.PRBranch = prBranchFlag
-
 	// Initialize GitHub client
 	log.Println("INFO: Initializing GitHub client...")
 	ctx := context.Background()
@@ -64,7 +60,7 @@ func runAlerts() {
 
 	// Fetch PR details including diff
 	log.Printf("INFO: Fetching PR details for PR #%d...", cfg.PRNumber)
-	prDetails, err := github.FetchPRDetails(githubClient, cfg)
+	cfg, prDetails, err := github.FetchPRDetails(githubClient, cfg)
 	if err != nil {
 		log.Fatalf("ERROR: Failed to fetch PR details: %v", err)
 	}

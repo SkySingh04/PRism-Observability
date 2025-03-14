@@ -200,7 +200,7 @@ func handleGetPRDetails(prNumber int) (map[string]any, error) {
 	ctx := context.Background()
 	githubClient := github.InitializeGithubClient(cfg, ctx)
 
-	prDetails, err := github.FetchPRDetails(githubClient, cfg)
+	cfg, prDetails, err := github.FetchPRDetails(githubClient, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching PR details: %v", err)
 	}

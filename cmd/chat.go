@@ -53,7 +53,7 @@ func runChat() {
 	githubClient := github.InitializeGithubClient(cfg, ctx)
 
 	// Fetch PR details including diff
-	prDetails, err := github.FetchPRDetails(githubClient, cfg)
+	cfg, prDetails, err := github.FetchPRDetails(githubClient, cfg)
 	if err != nil {
 		log.Fatalf("ERROR: Failed to fetch PR details: %v", err)
 	}

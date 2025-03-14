@@ -21,7 +21,7 @@ func InitializeGithubClient(config config.Config, ctx context.Context) *github.C
 	)))
 }
 
-func FetchPRDetails(client *github.Client, config config.Config) (map[string]interface{}, error) {
+func FetchPRDetails(client *github.Client, config config.Config) (config.Config, map[string]interface{}, error) {
 	log.Printf("Fetching PR details for PR #%d in %s/%s", config.PRNumber, config.RepoOwner, config.RepoName)
 	result := make(map[string]interface{})
 
@@ -34,13 +34,14 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	)
 	if err != nil {
 		log.Printf("Error fetching PR details: %v", err)
-		return nil, fmt.Errorf("error fetching PR details: %v", err)
+		return config, nil, fmt.Errorf("error fetching PR details: %v", err)
 	}
 
 	result["title"] = pr.GetTitle()
 	result["description"] = pr.GetBody()
 	result["author"] = pr.GetUser().GetLogin()
 	result["created_at"] = pr.GetCreatedAt().Format(time.RFC3339)
+	config.PRBranch = pr.GetHead().GetRef()
 
 	// Fetch PR diff
 	opt := &github.ListOptions{}
@@ -55,7 +56,7 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	)
 	if err != nil {
 		log.Printf("Error fetching PR commits: %v", err)
-		return nil, fmt.Errorf("error fetching PR commits: %v", err)
+		return config, nil, fmt.Errorf("error fetching PR commits: %v", err)
 	}
 
 	// Get PR files (diff)
@@ -69,7 +70,7 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	)
 	if err != nil {
 		log.Printf("Error fetching PR files: %v", err)
-		return nil, fmt.Errorf("error fetching PR files: %v", err)
+		return config, nil, fmt.Errorf("error fetching PR files: %v", err)
 	}
 
 	// Process files
@@ -100,7 +101,7 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	result["commits"] = len(commits)
 
 	log.Printf("Successfully fetched PR details with %d files and %d commits", len(fileDetails), len(commits))
-	return result, nil
+	return config, result, nil
 }
 
 // Shared function to commit an alert rule to the repository

@@ -58,7 +58,7 @@ func runDashboard() {
 
 	// Fetch PR details including diff
 	log.Println("Fetching PR details...")
-	prDetails, err := github.FetchPRDetails(githubClient, cfg)
+	cfg, prDetails, err := github.FetchPRDetails(githubClient, cfg)
 	if err != nil {
 		log.Fatalf("Error fetching PR details: %v", err)
 	}
