@@ -1,0 +1,13 @@
+groups:
+- name: metric
+  rules:
+  - alert: APILatencySpike
+    expr: 
+    for: 5m
+    labels:
+      severity: p1
+      type: metric
+    annotations:
+      summary: "APILatencySpike"
+      description: "95th percentile latency for API endpoints is above 1 second"
+      runbook_url: "[Link to Runbook](https://wiki.example.com/runbooks/api-latency)"
