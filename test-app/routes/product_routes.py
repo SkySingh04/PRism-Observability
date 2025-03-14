@@ -34,3 +34,12 @@ def delete_product_by_id(id):
     if delete_product(id):
         return jsonify({'message': 'Product deleted'})
     return jsonify({'message': 'Product not found'}), 404
+
+@bp.route('/search', methods=['GET'])
+def search_products():
+    query = request.args.get('q')
+    if not query:
+        return jsonify({'message': 'Please provide a search query'}), 400
+    # Assuming you have a search_products function in your service
+    products = search_products(query)  
+    return jsonify(products)
