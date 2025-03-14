@@ -236,3 +236,48 @@ func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[
 	log.Printf("Successfully created all alert PR comments")
 	return nil
 }
+
+// PostSummaryComment posts a summary comment to the PR's conversation
+func PostSummaryComment(owner, repo string, prNumber int, summary, token string) error {
+	if summary == "" {
+		log.Printf("No summary provided, skipping comment creation")
+		return nil // No summary to post
+	}
+
+	log.Printf("Posting summary comment to PR #%d in %s/%s", prNumber, owner, repo)
+	summaryPayload := map[string]interface{}{
+		"body": summary,
+	}
+
+	summaryJSON, err := json.Marshal(summaryPayload)
+	if err != nil {
+		log.Printf("Error marshaling summary payload: %v", err)
+		return fmt.Errorf("error marshaling summary payload: %v", err)
+	}
+
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d/comments", owner, repo, prNumber)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(summaryJSON))
+	if err != nil {
+		log.Printf("Error creating HTTP request for summary: %v", err)
+		return fmt.Errorf("error creating HTTP request for summary: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("token %s", token))
+	req.Header.Set("Content-Type", "application/json")
+
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Printf("Error posting summary comment: %v", err)
+		return fmt.Errorf("error posting summary comment: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		log.Printf("GitHub API error (%d) for summary comment", resp.StatusCode)
+		return fmt.Errorf("GitHub API error (%d) for summary comment", resp.StatusCode)
+	}
+
+	log.Printf("Successfully posted summary comment")
+	return nil
+}

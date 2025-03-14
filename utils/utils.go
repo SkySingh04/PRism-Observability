@@ -120,3 +120,16 @@ func ConvertToAmplitudeQuery(query map[string]interface{}) map[string]interface{
 
 	return amplitudeQuery
 }
+
+// Helper function to create safe filenames
+func NormalizeFileName(name string) string {
+	// Replace spaces and special characters with underscores
+	normalized := strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			return r
+		}
+		return '_'
+	}, name)
+
+	return strings.ToLower(normalized)
+}

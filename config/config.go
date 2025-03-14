@@ -66,6 +66,8 @@ type Config struct {
 	DatadogAPIKey              string
 	DatadogAppKey              string
 	PrometheusConfigPath       string
+	PRBranch                   string
+	RunningInCI                bool
 }
 
 // ObservabilityRecommendation represents the recommendations from Claude

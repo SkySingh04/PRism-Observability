@@ -2,12 +2,11 @@ package github
 
 import (
 	"PRism/config"
-	"bytes"
+	"PRism/utils"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/google/go-github/v53/github"
@@ -104,47 +103,62 @@ func FetchPRDetails(client *github.Client, config config.Config) (map[string]int
 	return result, nil
 }
 
-// PostSummaryComment posts a summary comment to the PR's conversation
-func PostSummaryComment(owner, repo string, prNumber int, summary, token string) error {
-	if summary == "" {
-		log.Printf("No summary provided, skipping comment creation")
-		return nil // No summary to post
-	}
+// Shared function to commit an alert rule to the repository
+func CommitAlertToRepository(suggestion config.AlertSuggestion, alertRule string, configPath string, cfg config.Config) error {
+	fileName := utils.NormalizeFileName(suggestion.Name) + ".yml"
+	repoPath := filepath.Join(configPath, fileName)
 
-	log.Printf("Posting summary comment to PR #%d in %s/%s", prNumber, owner, repo)
-	summaryPayload := map[string]interface{}{
-		"body": summary,
-	}
+	ctx := context.Background()
+	client := InitializeGithubClient(cfg, ctx)
 
-	summaryJSON, err := json.Marshal(summaryPayload)
+	ref, _, err := client.Git.GetRef(ctx, cfg.RepoOwner, cfg.RepoName, fmt.Sprintf("refs/heads/%s", cfg.PRBranch))
 	if err != nil {
-		log.Printf("Error marshaling summary payload: %v", err)
-		return fmt.Errorf("error marshaling summary payload: %v", err)
+		return fmt.Errorf("failed to get reference to branch: %w", err)
 	}
 
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues/%d/comments", owner, repo, prNumber)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(summaryJSON))
+	commit, _, err := client.Git.GetCommit(ctx, cfg.RepoOwner, cfg.RepoName, *ref.Object.SHA)
 	if err != nil {
-		log.Printf("Error creating HTTP request for summary: %v", err)
-		return fmt.Errorf("error creating HTTP request for summary: %v", err)
+		return fmt.Errorf("failed to get commit: %w", err)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("token %s", token))
-	req.Header.Set("Content-Type", "application/json")
-
-	httpClient := &http.Client{}
-	resp, err := httpClient.Do(req)
+	blob, _, err := client.Git.CreateBlob(ctx, cfg.RepoOwner, cfg.RepoName, &github.Blob{
+		Content:  github.String(alertRule),
+		Encoding: github.String("utf-8"),
+	})
 	if err != nil {
-		log.Printf("Error posting summary comment: %v", err)
-		return fmt.Errorf("error posting summary comment: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Printf("GitHub API error (%d) for summary comment", resp.StatusCode)
-		return fmt.Errorf("GitHub API error (%d) for summary comment", resp.StatusCode)
+		return fmt.Errorf("failed to create blob: %w", err)
 	}
 
-	log.Printf("Successfully posted summary comment")
+	entries := []*github.TreeEntry{
+		{
+			Path: github.String(repoPath),
+			Mode: github.String("100644"),
+			Type: github.String("blob"),
+			SHA:  blob.SHA,
+		},
+	}
+
+	tree, _, err := client.Git.CreateTree(ctx, cfg.RepoOwner, cfg.RepoName, *commit.Tree.SHA, entries)
+	if err != nil {
+		return fmt.Errorf("failed to create tree: %w", err)
+	}
+
+	alertType := suggestion.Type
+	newCommit, _, err := client.Git.CreateCommit(ctx, cfg.RepoOwner, cfg.RepoName, &github.Commit{
+		Message: github.String(fmt.Sprintf("Add %s alert rule for %s", alertType, suggestion.Name)),
+		Tree:    tree,
+		Parents: []*github.Commit{commit},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create commit: %w", err)
+	}
+
+	ref.Object.SHA = newCommit.SHA
+	_, _, err = client.Git.UpdateRef(ctx, cfg.RepoOwner, cfg.RepoName, ref, false)
+	if err != nil {
+		return fmt.Errorf("failed to update reference: %w", err)
+	}
+
+	fmt.Printf("Added %s alert rule for %s to PR branch\n", alertType, suggestion.Name)
 	return nil
 }
