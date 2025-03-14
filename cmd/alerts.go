@@ -23,6 +23,7 @@ var (
 	alertType           string
 	skipAlertPromptFlag bool
 	runningInCIFlag     bool
+	prBranchFlag        string
 )
 
 var alertsCmd = &cobra.Command{
@@ -44,6 +45,8 @@ func init() {
 	alertsCmd.Flags().StringVar(&alertType, "type", "", "Type of alert (prometheus, datadog)")
 	alertsCmd.Flags().BoolVar(&skipAlertPromptFlag, "skip-prompt", false, "Skip interactive prompts (for CI/CD)")
 	alertsCmd.Flags().BoolVar(&runningInCIFlag, "running-in-ci", false, "Specify if tool is running in CI")
+	alertsCmd.Flags().StringVar(&prBranchFlag, "pr-branch", "main", "Branch to create alerts on")
+
 }
 
 func runAlerts() {
@@ -51,6 +54,8 @@ func runAlerts() {
 	cfg := config.LoadConfig()
 
 	cfg.RunningInCI = runningInCIFlag
+
+	cfg.PRBranch = prBranchFlag
 
 	// Initialize GitHub client
 	log.Println("INFO: Initializing GitHub client...")
