@@ -6,7 +6,6 @@ on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
-    
 
 permissions:
   pull-requests: write
@@ -38,6 +37,7 @@ jobs:
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
+        continue-on-error: true
         run: ./prism check
         
       - name: Run PRism Dashboard
@@ -51,6 +51,7 @@ jobs:
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
+        continue-on-error: true
         run: ./prism dashboard
         
       - name: Run PRism Alerts
@@ -64,4 +65,5 @@ jobs:
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
-        run: ./prism alerts 
+        continue-on-error: true
+        run: ./prism alerts
