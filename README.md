@@ -141,7 +141,7 @@ TracePR analyzes pull requests to identify missing or inadequate observability i
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/TracePR.git
+   git clone https://github.com/SkySingh04/TracePR.git
    cd TracePR
    ```
 
