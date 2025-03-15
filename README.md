@@ -2,6 +2,16 @@
 
 TracePR is an AI-powered tool that analyzes GitHub pull requests using Claude AI to provide observability recommendations, create dashboards, and manage alerts. It helps improve code quality and observability standards in your projects by suggesting improvements for logging, metrics, tracing, and event tracking.
 
+## Demo Videos:
+
+### Github Integration Demo on Python PR:
+
+https://github.com/user-attachments/assets/89e10a08-7b7e-4c46-af3c-4991662f9ab5
+
+### CLI Demo on Typescript PR: 
+
+https://github.com/user-attachments/assets/8c0e29c9-ad53-4d40-806c-c4824e259ce6
+
 ## Table of Contents
 
 - [Project Overview](#project-overview)
