@@ -1,7 +1,7 @@
 package alerts
 
 import (
-	"PRism/config"
+	"tracepr/config"
 	"context"
 	"fmt"
 	"log"
@@ -17,7 +17,7 @@ func convertPrometheusToDatadogQuery(query string, threshold float64) string {
 	countRegex := regexp.MustCompile(`count\(message=~"([^"]+)"\)\s*>\s*([\d.]+)`)
 	if matches := countRegex.FindStringSubmatch(query); len(matches) > 2 {
 		messageRegex := strings.ReplaceAll(matches[1], ".*", "*")
-		return fmt.Sprintf("logs(\"@job:prism message:~\\\"%s\\\"\").index(\"*\").rollup(\"count\").last(\"5m\") > %s",
+		return fmt.Sprintf("logs(\"@job:tracepr message:~\\\"%s\\\"\").index(\"*\").rollup(\"count\").last(\"5m\") > %s",
 			messageRegex, matches[2])
 	}
 
@@ -56,7 +56,7 @@ func convertPrometheusToDatadogQuery(query string, threshold float64) string {
 	}
 
 	// Default case for simple thresholds
-	return fmt.Sprintf("logs(\"@job:prism\").index(\"*\").rollup(\"count\").last(\"5m\") > %.2f", threshold)
+	return fmt.Sprintf("logs(\"@job:tracepr\").index(\"*\").rollup(\"count\").last(\"5m\") > %.2f", threshold)
 }
 
 func convertQueryFragment(fragment string) string {
@@ -86,7 +86,7 @@ func convertQueryFragment(fragment string) string {
 		regex := regexp.MustCompile(`message=~?"([^"]+)"`)
 		if matches := regex.FindStringSubmatch(fragment); len(matches) > 1 {
 			message := strings.ReplaceAll(matches[1], ".*", "*")
-			return fmt.Sprintf("logs(\"@job:prism message:~\\\"%s\\\"\").rollup(\"count\").last(\"5m\")", message)
+			return fmt.Sprintf("logs(\"@job:tracepr message:~\\\"%s\\\"\").rollup(\"count\").last(\"5m\")", message)
 		}
 	}
 

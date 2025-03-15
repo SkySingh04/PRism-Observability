@@ -1,4 +1,4 @@
-name: PRism Alert Creation
+name: Tracepr Alert Creation
 
 on:
   issue_comment:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   create-alert:
-    if: github.event.issue.pull_request && (contains(github.event.comment.body, 'prism alert --create') || contains(github.event.comment.body, 'alert-create'))
+    if: github.event.issue.pull_request && (contains(github.event.comment.body, 'tracepr alert --create') || contains(github.event.comment.body, 'alert-create'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,8 +24,8 @@ jobs:
         with:
           go-version: '1.21'
           
-      - name: Build PRism
-        run: go build -o prism
+      - name: Build tracepr
+        run: go build -o tracepr
         
       - name: Parse Comment
         id: parse_comment
@@ -33,9 +33,9 @@ jobs:
           COMMENT="${{ github.event.comment.body }}"
           
           # Check for specific alert creation commands
-          if [[ "$COMMENT" == *"prism alert --create --name"* ]]; then
+          if [[ "$COMMENT" == *"tracepr alert --create --name"* ]]; then
             # Extract alert name
-            ALERT_NAME=$(echo "$COMMENT" | sed -n 's/.*prism alert --create --name \(.*\)/\1/p')
+            ALERT_NAME=$(echo "$COMMENT" | sed -n 's/.*tracepr alert --create --name \(.*\)/\1/p')
             echo "command=specific" >> $GITHUB_OUTPUT
             echo "alert=$ALERT_NAME" >> $GITHUB_OUTPUT
           elif [[ "$COMMENT" == *"alert-create"* ]]; then
@@ -68,15 +68,15 @@ jobs:
           if [[ "$COMMAND_TYPE" == "specific" ]]; then
             echo "Creating specific alert: $ALERT_NAME"
             echo "Creating alert on branch: $PR_BRANCH"
-            ./prism alerts --create --name "$ALERT_NAME" --running-in-ci 
+            ./tracepr alerts --create --name "$ALERT_NAME" --running-in-ci 
           elif [[ "$COMMAND_TYPE" == "from_comment" ]]; then
             echo "Creating alert from comment: $ALERT_TYPE - $ALERT_NAME"
             echo "Creating alert on branch: $PR_BRANCH"
-            ./prism alerts --create --name "$ALERT_NAME" --type "$ALERT_TYPE" --running-in-ci 
+            ./tracepr alerts --create --name "$ALERT_NAME" --type "$ALERT_TYPE" --running-in-ci 
           else
             echo "Creating all suggested alerts"
             echo "Creating alert on branch: $PR_BRANCH"
-            ./prism alerts --create-all --running-in-ci 
+            ./tracepr alerts --create-all --running-in-ci 
           fi
       
       - name: Comment on PR

@@ -2,7 +2,7 @@ groups:
 - name: metric
   rules:
   - alert: DatadogAPILatency
-    expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service="prism", target_service="datadog"}[5m])) by (le)) > 2
+    expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service="tracepr", target_service="datadog"}[5m])) by (le)) > 2
     for: 5m
     labels:
       severity: p1
@@ -10,4 +10,4 @@ groups:
     annotations:
       summary: "DatadogAPILatency"
       description: "Datadog API requests are taking longer than expected, which may impact alert creation functionality."
-      runbook_url: "https://github.com/organization/prism/wiki/datadog-integration-issues"
+      runbook_url: "https://github.com/organization/tracepr/wiki/datadog-integration-issues"

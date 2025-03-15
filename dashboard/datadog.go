@@ -1,7 +1,7 @@
 package dashboard
 
 import (
-	"PRism/config"
+	"tracepr/config"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -295,7 +295,7 @@ func CreateDatadogDashboard(suggestion config.DashboardSuggestion, cfg config.Co
 
 	// Create dashboard request
 	dashTitle := suggestion.Name
-	dashDesc := "Created by PRism"
+	dashDesc := "Created by tracepr"
 	layoutType := datadog.DASHBOARDLAYOUTTYPE_ORDERED
 	dashboardRequest := datadog.Dashboard{
 		Title:             dashTitle,

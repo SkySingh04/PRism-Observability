@@ -1,7 +1,7 @@
 package dashboard
 
 import (
-	"PRism/config"
+	"tracepr/config"
 	"fmt"
 	"log"
 )

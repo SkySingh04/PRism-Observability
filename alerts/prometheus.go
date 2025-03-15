@@ -1,9 +1,9 @@
 package alerts
 
 import (
-	"PRism/config"
-	"PRism/github"
-	"PRism/utils"
+	"tracepr/config"
+	"tracepr/github"
+	"tracepr/utils"
 	"fmt"
 	"os"
 	"path/filepath"

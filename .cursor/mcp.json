@@ -1,10 +1,10 @@
 {
     "mcpServers": {
-      "prism": {
-        "command": "./prism",
+      "tracepr": {
+        "command": "./tracepr",
         "args": ["chat", "--mcp"],
         "env": {
-          "PRISM_VERBOSITY": "info"
+          "tracepr_VERBOSITY": "info"
         }
       }
     }

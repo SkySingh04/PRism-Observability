@@ -1,7 +1,7 @@
 package github
 
 import (
-	"PRism/config"
+	"tracepr/config"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -135,7 +135,7 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 		// Add action buttons - these will be parsed by the GitHub action
 		commentBody += "<details>\n"
 		commentBody += "<summary>Click to create this dashboard</summary>\n\n"
-		commentBody += fmt.Sprintf("To create this dashboard, comment with:\n\n`prism dashboard --create  %s`\n\n", suggestion.Name)
+		commentBody += fmt.Sprintf("To create this dashboard, comment with:\n\n`tracepr dashboard --create  %s`\n\n", suggestion.Name)
 		commentBody += fmt.Sprintf("<!-- DASHBOARD_CREATE:%s:%s -->\n", suggestion.Type, suggestion.Name)
 		commentBody += "</details>\n"
 
@@ -153,7 +153,7 @@ func CreateDashboardPRComments(suggestions []config.DashboardSuggestion, prDetai
 
 	// Add a comment for creating all dashboards at once
 	allDashboardsComment := "## Create All Dashboards\n\n"
-	allDashboardsComment += "To create all suggested dashboards, comment with:\n\n`prism dashboard --create-all`\n\n"
+	allDashboardsComment += "To create all suggested dashboards, comment with:\n\n`tracepr dashboard --create-all`\n\n"
 
 	issueComment := &github.IssueComment{
 		Body: github.String(allDashboardsComment),
@@ -203,7 +203,7 @@ func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[
 		// Add action buttons - these will be parsed by the GitHub action
 		commentBody += "<details>\n"
 		commentBody += "<summary>Click to create this alert</summary>\n\n"
-		commentBody += fmt.Sprintf("To create this alert, comment with:\n\n`prism alert --create %s`\n\n", suggestion.Name)
+		commentBody += fmt.Sprintf("To create this alert, comment with:\n\n`tracepr alert --create %s`\n\n", suggestion.Name)
 		commentBody += fmt.Sprintf("<!-- ALERT_CREATE:%s:%s -->\n", suggestion.Type, suggestion.Name)
 		commentBody += "</details>\n"
 
@@ -221,7 +221,7 @@ func CreateAlertsPRComments(suggestions []config.AlertSuggestion, prDetails map[
 
 	// Add a comment for creating all alerts at once
 	allAlertsComment := "## Create All Alerts\n\n"
-	allAlertsComment += "To create all suggested alerts, comment with:\n\n`prism alert --create-all`\n\n"
+	allAlertsComment += "To create all suggested alerts, comment with:\n\n`tracepr alert --create-all`\n\n"
 
 	issueComment := &github.IssueComment{
 		Body: github.String(allAlertsComment),

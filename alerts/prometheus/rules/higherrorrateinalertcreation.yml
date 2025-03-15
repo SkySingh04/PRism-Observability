@@ -10,4 +10,4 @@ groups:
     annotations:
       summary: "HighErrorRateInAlertCreation"
       description: "Alert creation operations are failing at an elevated rate, indicating potential issues with the alert creation functionality or external alert service APIs."
-      runbook_url: "https://github.com/organization/prism/wiki/alert-creation-failures"
+      runbook_url: "https://github.com/organization/tracepr/wiki/alert-creation-failures"

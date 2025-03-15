@@ -1,4 +1,4 @@
-name: PRism Comment Trigger
+name: Tracepr Comment Trigger
 
 on:
   issue_comment:
@@ -20,8 +20,8 @@ jobs:
         with:
           go-version: '1.21'
           
-      - name: Build PRism
-        run: go build -o prism
+      - name: Build tracepr
+        run: go build -o tracepr
         
       - name: Get PR Number
         id: get_pr_number
@@ -29,8 +29,8 @@ jobs:
           PR_NUMBER=$(echo ${{ github.event.issue.number }})
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           
-      - name: Run PRism Check
-        if: github.event.comment.body == 'prism check'
+      - name: Run tracepr Check
+        if: github.event.comment.body == 'tracepr check'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -41,10 +41,10 @@ jobs:
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
-        run: ./prism check
+        run: ./tracepr check
         
-      - name: Run PRism Dashboard
-        if : github.event.comment.body == 'prism dashboard'
+      - name: Run tracepr Dashboard
+        if : github.event.comment.body == 'tracepr dashboard'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -55,10 +55,10 @@ jobs:
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
-        run: ./prism dashboard
+        run: ./tracepr dashboard
         
-      - name: Run PRism Alerts
-        if: github.event.comment.body == 'prism alerts'
+      - name: Run tracepr Alerts
+        if: github.event.comment.body == 'tracepr alerts'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
@@ -69,4 +69,4 @@ jobs:
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
-        run: ./prism alerts 
+        run: ./tracepr alerts 

@@ -36,9 +36,9 @@ var asciiLogo = `
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "prism",
-	Short: "PRism - PR Observability and Analysis Tool",
-	Long: `PRism is a tool for analyzing GitHub pull requests using Claude AI.
+	Use:   "tracepr",
+	Short: "tracepr - PR Observability and Analysis Tool",
+	Long: `tracepr is a tool for analyzing GitHub pull requests using Claude AI.
 It provides observability, alerts, and dashboard features to help you
 maintain code quality and standards.`,
 }
@@ -56,7 +56,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// Global flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.prism.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.tracepr.yaml)")
 	rootCmd.PersistentFlags().StringVar(&githubToken, "github-token", "", "GitHub API token")
 	rootCmd.PersistentFlags().StringVar(&claudeAPIKey, "claude-api-key", "", "Claude API key")
 	rootCmd.PersistentFlags().StringVar(&repoOwner, "repo-owner", "", "GitHub repository owner")
@@ -130,9 +130,9 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".prism" (without extension)
+		// Search config in home directory with name ".tracepr" (without extension)
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".prism")
+		viper.SetConfigName(".tracepr")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

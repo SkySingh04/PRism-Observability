@@ -1,8 +1,8 @@
 package llm
 
 import (
-	"PRism/config"
-	"PRism/utils"
+	"tracepr/config"
+	"tracepr/utils"
 	"bytes"
 	"encoding/json"
 	"fmt"

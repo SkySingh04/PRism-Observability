@@ -1,9 +1,9 @@
 package mcp
 
 import (
-	"PRism/config"
-	"PRism/github"
-	"PRism/llm"
+	"tracepr/config"
+	"tracepr/github"
+	"tracepr/llm"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -33,7 +33,7 @@ func RunMCPServer() {
 		log.Printf("Request details: Method=%s, JSONRPC=%s", req.Method, req.JSONRPC)
 		manifest := config.MCPManifest{
 			Schema:  "mcp-0.7.1",
-			Name:    "prism",
+			Name:    "tracepr",
 			Version: "1.0.0",
 			Tools: []config.MCPTool{
 				{

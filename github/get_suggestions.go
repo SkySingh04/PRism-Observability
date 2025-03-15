@@ -1,7 +1,7 @@
 package github
 
 import (
-	"PRism/config"
+	"tracepr/config"
 	"context"
 	"fmt"
 	"log"

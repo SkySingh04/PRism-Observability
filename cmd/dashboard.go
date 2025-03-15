@@ -2,10 +2,10 @@
 package cmd
 
 import (
-	"PRism/config"
-	"PRism/dashboard"
-	"PRism/github"
-	"PRism/llm"
+	"tracepr/config"
+	"tracepr/dashboard"
+	"tracepr/github"
+	"tracepr/llm"
 	"bufio"
 	"context"
 	"fmt"

@@ -2,9 +2,9 @@
 package cmd
 
 import (
-	"PRism/config"
-	"PRism/github"
-	"PRism/llm"
+	"tracepr/config"
+	"tracepr/github"
+	"tracepr/llm"
 	"context"
 	"os"
 

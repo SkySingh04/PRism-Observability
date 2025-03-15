@@ -1,7 +1,7 @@
 package main
 
 import (
-	"PRism/cmd"
+	"tracepr/cmd"
 	"log"
 
 	"github.com/joho/godotenv"

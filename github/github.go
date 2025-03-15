@@ -1,8 +1,8 @@
 package github
 
 import (
-	"PRism/config"
-	"PRism/utils"
+	"tracepr/config"
+	"tracepr/utils"
 	"context"
 	"fmt"
 	"log"

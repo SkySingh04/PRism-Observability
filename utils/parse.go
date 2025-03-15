@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"PRism/config"
+	"tracepr/config"
 	"fmt"
 	"regexp"
 	"strings"

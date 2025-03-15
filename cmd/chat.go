@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"PRism/config"
-	"PRism/github"
-	"PRism/llm"
-	"PRism/mcp"
+	"tracepr/config"
+	"tracepr/github"
+	"tracepr/llm"
+	"tracepr/mcp"
 	"bufio"
 	"context"
 	"fmt"
@@ -38,14 +38,14 @@ func init() {
 }
 
 func runMCPServer() {
-	log.Println("INFO: Starting PRism in MCP server mode...")
+	log.Println("INFO: Starting tracepr in MCP server mode...")
 	mcp.RunMCPServer()
 }
 
 func runChat() {
 	cfg := config.LoadConfig()
 
-	log.Println("INFO: Starting PRism chat session. Type 'exit' or 'quit' to end the session.")
+	log.Println("INFO: Starting tracepr chat session. Type 'exit' or 'quit' to end the session.")
 	log.Printf("INFO: Connected to repository: %s/%s", cfg.RepoOwner, cfg.RepoName)
 
 	// Initialize context
@@ -133,7 +133,7 @@ func runChat() {
 			continue
 		}
 
-		log.Println("\nPRism: " + response)
+		log.Println("\ntracepr: " + response)
 
 		// Add assistant response to conversation
 		conversation = append(conversation, "Assistant: "+response)

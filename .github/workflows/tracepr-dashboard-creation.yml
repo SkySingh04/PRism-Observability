@@ -1,4 +1,4 @@
-name: PRism Dashboard Creation
+name: Tracepr Dashboard Creation
 
 on:
   issue_comment:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   create-dashboard:
-    if: github.event.issue.pull_request && (contains(github.event.comment.body, 'prism dashboard --create') || contains(github.event.comment.body, 'dashboard-create'))
+    if: github.event.issue.pull_request && (contains(github.event.comment.body, 'tracepr dashboard --create') || contains(github.event.comment.body, 'dashboard-create'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,8 +23,8 @@ jobs:
         with:
           go-version: '1.21'
           
-      - name: Build PRism
-        run: go build -o prism
+      - name: Build tracepr
+        run: go build -o tracepr
         
       - name: Parse Comment
         id: parse_comment
@@ -32,9 +32,9 @@ jobs:
           COMMENT="${{ github.event.comment.body }}"
           
           # Check for specific dashboard creation commands
-          if [[ "$COMMENT" == *"prism dashboard --create --name"* ]]; then
+          if [[ "$COMMENT" == *"tracepr dashboard --create --name"* ]]; then
             # Extract dashboard name
-            DASHBOARD_NAME=$(echo "$COMMENT" | sed -n 's/.*prism dashboard --create \(.*\)/\1/p')
+            DASHBOARD_NAME=$(echo "$COMMENT" | sed -n 's/.*tracepr dashboard --create \(.*\)/\1/p')
             echo "command=specific" >> $GITHUB_OUTPUT
             echo "dashboard=$DASHBOARD_NAME" >> $GITHUB_OUTPUT
           elif [[ "$COMMENT" == *"dashboard-create"* ]]; then
@@ -66,13 +66,13 @@ jobs:
         run: |
           if [[ "$COMMAND_TYPE" == "specific" ]]; then
             echo "Creating specific dashboard: $DASHBOARD_NAME"
-            ./prism dashboard --create --name "$DASHBOARD_NAME"
+            ./tracepr dashboard --create --name "$DASHBOARD_NAME"
           elif [[ "$COMMAND_TYPE" == "from_comment" ]]; then
             echo "Creating dashboard from comment: $DASHBOARD_TYPE - $DASHBOARD_NAME"
-            ./prism dashboard --create --name "$DASHBOARD_NAME" --type "$DASHBOARD_TYPE"
+            ./tracepr dashboard --create --name "$DASHBOARD_NAME" --type "$DASHBOARD_TYPE"
           else
             echo "Creating all suggested dashboards"
-            ./prism dashboard --create-all
+            ./tracepr dashboard --create-all
           fi
       
       - name: Comment on PR
