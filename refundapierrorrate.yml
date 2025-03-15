@@ -1,0 +1,13 @@
+groups:
+- name: metric
+  rules:
+  - alert: RefundAPIErrorRate
+    expr: 
+    for: 5m
+    labels:
+      severity: p1
+      type: metric
+    annotations:
+      summary: "RefundAPIErrorRate"
+      description: "Refund API is experiencing a high error rate"
+      runbook_url: "[Link to Runbook](https://wiki.example.com/runbooks/refund-api-errors)"
