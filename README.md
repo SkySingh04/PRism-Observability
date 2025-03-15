@@ -1,8 +1,8 @@
-# PRism: Open-Source AI-Driven Code Review Tool
+# TracePR: Open-Source AI-Driven Code Review Tool
 
 **Say Goodbye to Tedious Code Reviews—and Hello to Flexible AI-Driven Reviews**
 
-PRism is an open-source, self-hosted AI-powered tool designed to automate and enhance reviews of code, documentation, and more. It empowers teams to enforce standards, streamline workflows, and improve security without vendor lock-in or hidden costs. Whether running locally, on private servers, or in the cloud, PRism gives you the flexibility to choose any language model (LLM), including self-hosted ones via Ollama or open-source alternatives.
+TracePR is an open-source, self-hosted AI-powered tool designed to automate and enhance reviews of code, documentation, and more. It empowers teams to enforce standards, streamline workflows, and improve security without vendor lock-in or hidden costs. Whether running locally, on private servers, or in the cloud, TracePR gives you the flexibility to choose any language model (LLM), including self-hosted ones via Ollama or open-source alternatives.
 
 ---
 
@@ -10,11 +10,11 @@ PRism is an open-source, self-hosted AI-powered tool designed to automate and en
 
 ### 1️⃣ **Customizable Review Rules**
 - Define your team's standards in a `RULES.md`, YAML, or JSON file.
-- Use PRism to enforce:
+- Use TracePR to enforce:
   - **For code**: Naming conventions, logging consistency, and error handling practices.
   - **For documentation**: Grammar, formatting, and style guidelines.
   - **For security**: Framework-specific best practices and OWASP standards.
-- Example: PRism flags snake_case variables in a camelCase project or suggests clearer documentation phrasing.
+- Example: TracePR flags snake_case variables in a camelCase project or suggests clearer documentation phrasing.
 
 ### 2️⃣ **Static Analysis + AI-Powered Review**
 - Combines traditional tools (like ESLint or GolangCI-Lint) with advanced AI reasoning to:
@@ -23,7 +23,7 @@ PRism is an open-source, self-hosted AI-powered tool designed to automate and en
   - Suggest improvements for both code and documentation.
 
 ### 3️⃣ **LLM Recommendation System**
-PRism includes a **built-in frontend** to guide users in selecting the best LLM for their use case:
+TracePR includes a **built-in frontend** to guide users in selecting the best LLM for their use case:
 - For **code reviews**: Opt for models like OpenAI Codex or Mistral.
 - For **documentation reviews**: Use AI better suited for writing, such as GPT-4 or Claude.
 - Recommendations include:
@@ -32,13 +32,13 @@ PRism includes a **built-in frontend** to guide users in selecting the best LLM 
   - **Cost estimates** for closed-source models, helping teams budget their usage.
 
 ### 4️⃣ **Flexible Hosting Options**
-- Run PRism locally, on private servers, or in the cloud:
+- Run TracePR locally, on private servers, or in the cloud:
   - **Self-hosted** LLMs via Ollama for maximum privacy and control.
   - **Cloud-based APIs** like OpenAI or Google Vertex AI for quick deployment.
 - Fully customizable to balance performance, cost, and context-length needs.
 
 ### 5️⃣ **More Than Just Code**
-PRism can review more than code—use it to:
+TracePR can review more than code—use it to:
 - Evaluate technical documentation for clarity and consistency.
 - Assess markdown or YAML files for formatting and adherence to standards.
 - Extend beyond development teams to writers, marketers, and DevOps workflows.
@@ -46,7 +46,7 @@ PRism can review more than code—use it to:
 ---
 
 ## **💡 How It Works**
-1. **Input**: PRism reads your `RULES.md` and any files you've selected for review (code, documentation, or both).
+1. **Input**: TracePR reads your `RULES.md` and any files you've selected for review (code, documentation, or both).
 2. **Analysis**:
    - Static analysis identifies common issues.
    - LLMs process nuanced requirements like tone, consistency, or security.
@@ -65,20 +65,20 @@ Create a `RULES.md` file with your team's standards:
 - For documentation: Grammar rules, formatting styles, or tone guidelines.
 
 ### **Step 2: Choose Your LLM**
-Use PRism's frontend to get personalized recommendations for:
+Use TracePR's frontend to get personalized recommendations for:
 - The best LLM for your use case (code, documentation, or both).
 - Cost estimates for closed-source APIs like OpenAI.
 - Open-source alternatives for teams prioritizing privacy.
 
-### **Step 3: Run PRism**
-- Integrate PRism into your CI/CD pipeline for automated pre-merge checks.
+### **Step 3: Run TracePR**
+- Integrate TracePR into your CI/CD pipeline for automated pre-merge checks.
 - Use the CLI tool to review locally before pushing changes.
 - Schedule periodic reviews to ensure codebase health.
 
 ---
 
-## **🤔 Why PRism?**
-PRism is designed for developers, writers, and teams who want:
+## **🤔 Why TracePR?**
+TracePR is designed for developers, writers, and teams who want:
 - Full control over their workflows without vendor lock-in.
 - Flexibility to adapt AI to diverse tasks like reviewing documentation or analyzing code.
 - A scalable, cost-transparent solution for AI-powered reviews.
@@ -92,8 +92,8 @@ For a team using GitHub for code and documentation:
 ---
 
 ## **Monetization Model**
-PRism is free and open-source, but we offer a **cloud-hosted version with enterprise support** that includes:
-- Managed hosting for PRism and LLMs.
+TracePR is free and open-source, but we offer a **cloud-hosted version with enterprise support** that includes:
+- Managed hosting for TracePR and LLMs.
 - Enhanced scalability and performance for large repositories.
 - Dedicated customer support for troubleshooting and customizations.
 
@@ -105,7 +105,7 @@ We welcome contributions from the community! Please check our [CONTRIBUTING.md](
 - Our coding standards and guidelines
 - The pull request process
 
-Looking for something to work on? Check out our [good first issues](https://github.com/SkySingh04/PRism/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) - these are perfect for getting started!
+Looking for something to work on? Check out our [good first issues](https://github.com/SkySingh04/TracePR/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) - these are perfect for getting started!
 
 ---
 
@@ -115,4 +115,4 @@ Looking for something to work on? Check out our [good first issues](https://gith
 
 ---
 
-PRism isn’t just a tool—it’s a customizable, AI-driven partner for code and documentation reviews. Let it help you unlock new levels of productivity and consistency across your projects. Try it today!
+TracePR isn’t just a tool—it’s a customizable, AI-driven partner for code and documentation reviews. Let it help you unlock new levels of productivity and consistency across your projects. Try it today!
