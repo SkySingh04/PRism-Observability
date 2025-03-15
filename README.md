@@ -1,177 +1,118 @@
-# PRism - PR Observability and Analysis Tool
+# PRism: Open-Source AI-Driven Code Review Tool
 
-PRism is an AI-powered tool that analyzes GitHub pull requests using Claude AI to provide observability recommendations, create dashboards, and manage alerts. It helps improve code quality and observability standards in your projects.
+**Say Goodbye to Tedious Code Reviews—and Hello to Flexible AI-Driven Reviews**
 
-## Project Structure
+PRism is an open-source, self-hosted AI-powered tool designed to automate and enhance reviews of code, documentation, and more. It empowers teams to enforce standards, streamline workflows, and improve security without vendor lock-in or hidden costs. Whether running locally, on private servers, or in the cloud, PRism gives you the flexibility to choose any language model (LLM), including self-hosted ones via Ollama or open-source alternatives.
 
-```
-.
-├── .env                # Environment variables configuration
-├── .gitignore          # Git ignore file
-├── alerts/             # Alert configuration and rules
-│   ├── prometheus.yml  # Prometheus configuration
-│   └── prometheus/     # Prometheus alert rules directory
-├── cmd/                # Command-line interface commands
-│   ├── alerts.go       # Manages PR alerts
-│   ├── chat.go         # Interactive chat functionality
-│   ├── check.go        # Checks PRs for observability issues
-│   ├── dashboard.go    # Generates dashboards
-│   └── root.go         # Base command setup
-├── config/             # Configuration management
-│   └── config.go       # Configuration loading and structures
-├── dashboard/          # Dashboard creation modules
-│   ├── amplitude.go    # Amplitude dashboard integration
-│   └── grafana.go      # Grafana dashboard integration
-├── github/             # GitHub API integration
-│   └── github.go       # GitHub client and API functions
-├── go.mod              # Go module definition
-├── go.sum              # Go module checksums
-├── llm/                # Large language model integration
-│   └── llm.go          # Claude AI integration
-├── main.go             # Application entry point
-├── prd.md              # Product Requirements Document
-└── utils/              # Utility functions
-    ├── parse.go        # Parsing utilities for LLM responses
-    └── utils.go        # General utilities
-```
+---
 
-## Features
+## **🌟 Key Features**
 
--   **Observability Analysis:** Analyzes pull requests to suggest improvements for:
-    -   OpenTelemetry instrumentation
-    -   Logging statements
-    -   Event tracking
--   **AI-Powered Recommendations:** Uses Claude AI to provide context-aware suggestions based on code changes and PRD
--   **Dashboard Generation:** Creates Grafana and Amplitude dashboards with:
-    -   Service-level metrics visualization
-    -   Error rate tracking
-    -   Performance monitoring
--   **GitHub Integration:** Directly interacts with GitHub to:
-    -   Analyze PR diffs
-    -   Add inline code suggestions
-    -   Post summary comments
+### 1️⃣ **Customizable Review Rules**
+- Define your team's standards in a `RULES.md`, YAML, or JSON file.
+- Use PRism to enforce:
+  - **For code**: Naming conventions, logging consistency, and error handling practices.
+  - **For documentation**: Grammar, formatting, and style guidelines.
+  - **For security**: Framework-specific best practices and OWASP standards.
+- Example: PRism flags snake_case variables in a camelCase project or suggests clearer documentation phrasing.
 
-## Installation
+### 2️⃣ **Static Analysis + AI-Powered Review**
+- Combines traditional tools (like ESLint or GolangCI-Lint) with advanced AI reasoning to:
+  - Analyze PRs based on `RULES.md`.
+  - Highlight style, security, and architectural concerns.
+  - Suggest improvements for both code and documentation.
 
-1.  Clone the repository:
+### 3️⃣ **LLM Recommendation System**
+PRism includes a **built-in frontend** to guide users in selecting the best LLM for their use case:
+- For **code reviews**: Opt for models like OpenAI Codex or Mistral.
+- For **documentation reviews**: Use AI better suited for writing, such as GPT-4 or Claude.
+- Recommendations include:
+  - Open-source models for privacy-conscious users.
+  - Cloud-hosted APIs for rapid setup.
+  - **Cost estimates** for closed-source models, helping teams budget their usage.
 
-    ```bash
-    git clone https://github.com/yourusername/prism.git
-    cd prism
-    ```
-2.  Create a `.env` file with your configuration (see Configuration section)
-3.  Build the application:
+### 4️⃣ **Flexible Hosting Options**
+- Run PRism locally, on private servers, or in the cloud:
+  - **Self-hosted** LLMs via Ollama for maximum privacy and control.
+  - **Cloud-based APIs** like OpenAI or Google Vertex AI for quick deployment.
+- Fully customizable to balance performance, cost, and context-length needs.
 
-    ```bash
-    go build -o prism
-    ```
+### 5️⃣ **More Than Just Code**
+PRism can review more than code—use it to:
+- Evaluate technical documentation for clarity and consistency.
+- Assess markdown or YAML files for formatting and adherence to standards.
+- Extend beyond development teams to writers, marketers, and DevOps workflows.
 
-## Usage
+---
 
-### Check a Pull Request for Observability Improvements
+## **💡 How It Works**
+1. **Input**: PRism reads your `RULES.md` and any files you've selected for review (code, documentation, or both).
+2. **Analysis**:
+   - Static analysis identifies common issues.
+   - LLMs process nuanced requirements like tone, consistency, or security.
+3. **Output**: Feedback is provided via:
+   - PR comments in GitHub/GitLab/Bitbucket.
+   - CLI results for local review.
+   - Detailed JSON, Markdown, or PDF reports.
 
-```bash
-./prism check --repo-owner=<owner> --repo-name=<repo> --pr-number=<number>
-```
+---
 
-### Generate Dashboards from PR Analysis
+## **🚀 Getting Started**
 
-```bash
-./prism dashboard --repo-owner=<owner> --repo-name=<repo> --pr-number=<number> --dashboard-type=<grafana|amplitude>
-```
+### **Step 1: Define Your Rules**
+Create a `RULES.md` file with your team's standards:
+- For code: Naming conventions, error handling, logging structure.
+- For documentation: Grammar rules, formatting styles, or tone guidelines.
 
-### Manage PR Alerts
+### **Step 2: Choose Your LLM**
+Use PRism's frontend to get personalized recommendations for:
+- The best LLM for your use case (code, documentation, or both).
+- Cost estimates for closed-source APIs like OpenAI.
+- Open-source alternatives for teams prioritizing privacy.
 
-```bash
-./prism alerts --repo-owner=<owner> --repo-name=<repo> --pr-number=<number> --alert-type=<missing-logs|missing-metrics>
-```
+### **Step 3: Run PRism**
+- Integrate PRism into your CI/CD pipeline for automated pre-merge checks.
+- Use the CLI tool to review locally before pushing changes.
+- Schedule periodic reviews to ensure codebase health.
 
-### Interactive Chat Mode
+---
 
-```bash
-./prism chat --repo-owner=<owner> --repo-name=<repo> --pr-number=<number>
-```
+## **🤔 Why PRism?**
+PRism is designed for developers, writers, and teams who want:
+- Full control over their workflows without vendor lock-in.
+- Flexibility to adapt AI to diverse tasks like reviewing documentation or analyzing code.
+- A scalable, cost-transparent solution for AI-powered reviews.
 
-## Configuration
+### **Real-World Example**
+For a team using GitHub for code and documentation:
+- Use GPT-4 for reviewing technical docs (better at writing than coding).
+- Leverage Codex or Mistral for code-related tasks.
+- Customize prompts for each type of review for best results.
 
-PRism can be configured using environment variables, command-line flags, or a config file.
+---
 
-### Environment Variables
+## **Monetization Model**
+PRism is free and open-source, but we offer a **cloud-hosted version with enterprise support** that includes:
+- Managed hosting for PRism and LLMs.
+- Enhanced scalability and performance for large repositories.
+- Dedicated customer support for troubleshooting and customizations.
 
-Create a `.env` file with the following variables:
+---
 
-```
-# GitHub Configuration
-GITHUB_TOKEN=your_github_token
-REPO_OWNER=repository_owner
-REPO_NAME=repository_name
-PR_NUMBER=pull_request_number
+## **👥 Contributing**
+We welcome contributions from the community! Please check our [CONTRIBUTING.md](./CONTRIBUTING.md) guide for:
+- Setting up your development environment
+- Our coding standards and guidelines
+- The pull request process
 
-# Claude AI Configuration
-CLAUDE_API_KEY=your_claude_api_key
-CLAUDE_MODEL=claude-3-7-sonnet-20250219
-CLAUDE_BASE_URL=https://api.anthropic.com/v1/messages
+Looking for something to work on? Check out our [good first issues](https://github.com/SkySingh04/PRism/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) - these are perfect for getting started!
 
-# Application Configuration
-PRD_FILE=./prd.md
-OUTPUT_FORMAT=markdown
-MAX_DIFF_SIZE=10000
+---
 
-# Dashboard Configuration
-GRAFANA_SERVICE_ACCOUNT_TOKEN=your_grafana_token
-GRAFANA_URL=your_grafana_url
-AMPLITUDE_API_KEY=your_amplitude_api_key
-AMPLITUDE_SECRET_KEY=your_amplitude_secret_key
-```
+## **📖 Learn More**
+- Visit our [documentation](#) for setup details and advanced usage.
+- Explore the [cloud-hosted version](#) for managed solutions tailored to enterprise needs.
 
-### Command-line Flags
+---
 
-All environment variables can also be set via command-line flags:
-
-```bash
-./prism check \
-  --github-token=your_token \
-  --repo-owner=owner \
-  --repo-name=repo \
-  --pr-number=123 \
-  --prd-file=./prd.md \
-  --output=markdown
-```
-
-### Setting Up Prometheus for Testing
-
-```bash
-docker run --rm --detach \
-  --name my-prometheus \
-  --publish 9090:9090 \
-  --volume prometheus-volume:/prometheus \
-  --volume "$(pwd)"/alerts/prometheus.yml:/etc/prometheus/prometheus.yml \
-  --volume "$(pwd)"/alerts/prometheus/rules:/etc/prometheus/rules \
-  prom/prometheus
-```
-
-## Architecture
-
-PRism follows a modular architecture:
-
--   **cmd:** Contains command implementations
--   **config:** Manages application configuration
--   **dashboard:** Handles dashboard creation for Grafana and Amplitude
--   **github:** Interfaces with GitHub API
--   **llm:** Manages interactions with Claude AI
--   **utils:** Provides helper functions and parsers
--   **alerts:** Contains Prometheus alert configurations and rules
-
-## Requirements
-
--   Go 1.24+
--   GitHub access token
--   Claude AI API key
--   Grafana and/or Amplitude credentials (for dashboard creation)
--   Docker (for running Prometheus locally)
-
-## Troubleshooting
-
-- **API Rate Limits**: If you encounter GitHub API rate limits, try authenticating with a token that has higher rate limits
-- **Large PRs**: For PRs with very large diffs, use the `--max-diff-size` flag to limit the analysis size
-- **LLM Errors**: If Claude API returns errors, check your API key and ensure your account has sufficient credits
+PRism isn’t just a tool—it’s a customizable, AI-driven partner for code and documentation reviews. Let it help you unlock new levels of productivity and consistency across your projects. Try it today!
